@@ -2786,14 +2786,23 @@ This analysis will be used to place objects on a tactics board.`;
       <div className="tb-sidebar" style={{width:280,flexShrink:0,display:'flex',flexDirection:'column',gap:0,maxHeight:'calc(100vh - 32px)',overflowY:'auto'}}>
 
         {/* Header */}
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10,background:'#F0E6D3',borderRadius:12,padding:'10px 14px',border:'0.5px solid rgba(0,0,0,0.1)'}}>
-          <div>
-            <div style={{fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:18,letterSpacing:'-0.03em',color:'#1A1A1A',lineHeight:1.1}}>
-              Nutmeg<span style={{color:'#CC3300'}}>&amp;</span>Needle
+        <div style={{marginBottom:10,background:'#F0E6D3',borderRadius:12,padding:'10px 14px',border:'0.5px solid rgba(0,0,0,0.1)'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:18,letterSpacing:'-0.03em',color:'#1A1A1A',lineHeight:1.1}}>
+                Nutmeg<span style={{color:'#CC3300'}}>&amp;</span>Needle
+              </div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontWeight:400,fontSize:9,letterSpacing:'0.26em',textTransform:'uppercase',color:'#4A6741',marginTop:3}}>Handcrafted football moves</div>
             </div>
-            <div style={{fontFamily:"'Inter',sans-serif",fontWeight:400,fontSize:9,letterSpacing:'0.26em',textTransform:'uppercase',color:'#4A6741',marginTop:3}}>Handcrafted football moves</div>
+            <button onClick={()=>requestDelete([{type:'reset'}],'the entire board')} style={{fontSize:11,padding:'5px 10px',cursor:'pointer',borderRadius:8,border:`0.5px solid ${C.activeBorder}`,background:'transparent',color:C.activeBorder,flexShrink:0}}>↺ Reset</button>
           </div>
-          <button onClick={()=>requestDelete([{type:'reset'}],'the entire board')} style={{fontSize:11,padding:'5px 10px',cursor:'pointer',borderRadius:8,border:`0.5px solid ${C.activeBorder}`,background:'transparent',color:C.activeBorder,flexShrink:0}}>↺ Reset</button>
+          {fbUser&&(
+            <div style={{display:'flex',alignItems:'center',gap:7,marginTop:8,paddingTop:8,borderTop:'0.5px solid rgba(0,0,0,0.1)'}}>
+              {fbUser.photoURL&&<img src={fbUser.photoURL} alt="" style={{width:20,height:20,borderRadius:'50%',flexShrink:0}}/>}
+              <span style={{fontSize:11,color:'#555',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{fbUser.displayName||fbUser.email}</span>
+              <button onClick={signOut} style={{fontSize:11,padding:'3px 10px',cursor:'pointer',borderRadius:6,border:'0.5px solid rgba(0,0,0,0.15)',background:'transparent',color:'#888',flexShrink:0,fontFamily:"'Inter',sans-serif"}}>Sign out</button>
+            </div>
+          )}
         </div>
 
         {/* 1. What would you like to do */}
@@ -3315,7 +3324,7 @@ This analysis will be used to place objects on a tactics board.`;
           {/* Auth state */}
           {!fbUser&&(
             <div>
-              <div style={{fontSize:11,color:C.textMuted,marginBottom:8,lineHeight:1.5}}>Sign in to save boards to the cloud and access them from any device.</div>
+              <div style={{fontSize:11,color:C.textMuted,marginBottom:8,lineHeight:1.5}}>Sign in to save your work. Your current board is still editable.</div>
               <button onClick={signInWithGoogle} style={{width:'100%',fontSize:12,padding:'8px',cursor:'pointer',borderRadius:8,border:'none',background:'#1A1A1A',color:'#fff',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
                 <span style={{fontSize:16}}>G</span> Sign in with Google
               </button>
@@ -3323,12 +3332,6 @@ This analysis will be used to place objects on a tactics board.`;
           )}
 
           {fbUser&&(<>
-            {/* User info */}
-            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,padding:'7px 10px',background:'#F7F7F4',borderRadius:8}}>
-              {fbUser.photoURL&&<img src={fbUser.photoURL} alt="" style={{width:24,height:24,borderRadius:'50%'}}/>}
-              <span style={{fontSize:11,color:C.text,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{fbUser.displayName||fbUser.email}</span>
-              <button onClick={signOut} style={{fontSize:11,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.inputBorder,background:'transparent',color:C.textMuted}}>Sign out</button>
-            </div>
 
             {/* Save current board */}
             <div style={{marginBottom:10}}>

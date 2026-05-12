@@ -20,7 +20,8 @@
   --nn-coral-screen:#FF6633;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',sans-serif;background:#F0E6D3;padding:16px;min-height:100vh;}
+body{font-family:'Inter',sans-serif;background:#F0E6D3;padding:16px;min-height:100vh;overscroll-behavior:none;}
+canvas{touch-action:none;}
 input,button,textarea{font-family:'Inter',sans-serif;}
 :focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
 .tb-sidebar::-webkit-scrollbar{width:4px;}
@@ -1237,7 +1238,7 @@ function TacticsBoard(){
   }
 
   useEffect(()=>{draw();},[tick]);
-  useEffect(()=>{draw();},[]);
+  useEffect(()=>{if(fbAuthReady&&fbUser)draw();},[fbAuthReady]);
 
   // ─── WHEEL: pinch/ctrl+scroll zooms, two-finger scroll pans ──────────────
   useEffect(()=>{
@@ -1248,21 +1249,25 @@ function TacticsBoard(){
       const rect=canvas.getBoundingClientRect();
       const mult=e.deltaMode===1?20:e.deltaMode===2?300:1;
       if(e.ctrlKey){
-        // Pinch-to-zoom (trackpad) or ctrl+scroll — zoom around cursor
         zoomStep(e.deltaY<0?1.08:1/1.08,(e.clientX-rect.left)*W/rect.width,(e.clientY-rect.top)*H/rect.height);
       } else if(e.deltaX!==0||(e.deltaY!==0&&!e.shiftKey)){
-        // Two-finger pan: trackpad gives deltaX+deltaY, Magic Mouse gives deltaY
-        // Divide by scale so pan speed stays consistent at all zoom levels
         const sc=vp.current.scale;
         const dx=(e.deltaX*mult)/sc,dy=(e.deltaY*mult)/sc;
         const c=clampVP(sc,vp.current.ox-dx,vp.current.oy-dy);
         vp.current.ox=c.ox;vp.current.oy=c.oy;draw();
       }
     };
-    // Use capture:true so we intercept before browser scroll handling (critical in standalone PWA)
+    // Block all wheel events at document level when over canvas (fixes standalone PWA scroll interception)
+    const docBlock=function(e){
+      if(e.target===canvas||canvas.contains(e.target)){e.preventDefault();}
+    };
     canvas.addEventListener('wheel',fn,{passive:false,capture:true});
-    return function(){canvas.removeEventListener('wheel',fn,{capture:true});};
-  },[]);
+    document.addEventListener('wheel',docBlock,{passive:false,capture:true});
+    return function(){
+      canvas.removeEventListener('wheel',fn,{capture:true});
+      document.removeEventListener('wheel',docBlock,{capture:true});
+    };
+  },[fbAuthReady]);
 
   // ─── ESCAPE KEY ───────────────────────────────────────────────────────────
   useEffect(()=>{
@@ -1274,7 +1279,7 @@ function TacticsBoard(){
     };
     window.addEventListener('keydown',fn);
     return()=>window.removeEventListener('keydown',fn);
-  },[]);
+  },[fbAuthReady]);
 
   // ─── SPACEBAR PAN ─────────────────────────────────────────────────────────
   useEffect(()=>{
@@ -1296,7 +1301,7 @@ function TacticsBoard(){
     window.addEventListener('keydown',onKD);
     window.addEventListener('keyup',onKU);
     return()=>{window.removeEventListener('keydown',onKD);window.removeEventListener('keyup',onKU);};
-  },[]);
+  },[fbAuthReady]);
 
   // Shared 8-direction resize handler for legend boxes
   // Mutates legend ref (st.legend or st.stepLegend) in-place
@@ -1753,6 +1758,8 @@ function TacticsBoard(){
         loadBoardList(user.uid);
         loadApiKeyFromFirestore(user.uid);
       }
+      // Trigger canvas init after auth resolves (splash screen was shown before canvas existed)
+      setTimeout(function(){redraw();},50);
     });
     return unsub;
   },[]);

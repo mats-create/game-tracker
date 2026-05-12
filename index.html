@@ -2364,10 +2364,16 @@ function TacticsBoard(){
     const ps=PAGE_SIZES[fmt]||PAGE_SIZES['a4'];
     const pageW=ori==='portrait'?ps.h:ps.w,pageH=ori==='portrait'?ps.w:ps.h;
 
+    // For hoop format, output at actual template size (fits inside hoop with margin)
+    // rather than filling the full hoop dimensions. Scale content to 240mm wide max.
+    const HOOP_MAX_W=240,HOOP_MAX_H=210;
+    const svgW=fmt==='hoop'?Math.min(HOOP_MAX_W,Math.round(HOOP_MAX_H*(b.w/(b.h+28))))+'mm':pageW+'mm';
+    const svgH=fmt==='hoop'?Math.min(HOOP_MAX_H,Math.round(HOOP_MAX_W*((b.h+28)/b.w)))+'mm':pageH+'mm';
+
     if(!emb){
       // ── Colour SVG — physical page dimensions, clip, legends ──
       const out=[];
-      out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${pageW}mm" height="${pageH}mm" viewBox="${b.x} ${b.y} ${b.w} ${b.h+28}">`);
+      out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="${b.x} ${b.y} ${b.w} ${b.h+28}">`);
       out.push(`<title>Tactics Board — ${fmt.toUpperCase()} ${ori}</title>`);
       out.push(`<defs><clipPath id="pc"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/></clipPath></defs>`);
       out.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="#fff"/>`);
@@ -2397,7 +2403,7 @@ function TacticsBoard(){
     // ── Embroidery SVG — identical to colour SVG, white background, Inkscape layers ──
     const out2=[];
     out2.push(`<?xml version="1.0" encoding="UTF-8"?>`);
-    out2.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="${pageW}mm" height="${pageH}mm" viewBox="${b.x} ${b.y} ${b.w} ${b.h+28}">`);
+    out2.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="${svgW}" height="${svgH}" viewBox="${b.x} ${b.y} ${b.w} ${b.h+28}">`);
     out2.push(`<title>Tactics Board embroidery — ${fmt.toUpperCase()} ${ori}</title>`);
     out2.push(`<defs><clipPath id="pce"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/></clipPath></defs>`);
     out2.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h+28}" fill="#ffffff"/>`);

@@ -1242,8 +1242,9 @@ function TacticsBoard(){
   // ─── WHEEL: pinch/ctrl+scroll zooms, two-finger scroll pans ──────────────
   useEffect(()=>{
     const canvas=canvasRef.current;if(!canvas)return;
-    const fn=e=>{
+    const fn=function(e){
       e.preventDefault();
+      e.stopPropagation();
       const rect=canvas.getBoundingClientRect();
       const mult=e.deltaMode===1?20:e.deltaMode===2?300:1;
       if(e.ctrlKey){
@@ -1258,8 +1259,9 @@ function TacticsBoard(){
         vp.current.ox=c.ox;vp.current.oy=c.oy;draw();
       }
     };
-    canvas.addEventListener('wheel',fn,{passive:false});
-    return()=>canvas.removeEventListener('wheel',fn);
+    // Use capture:true so we intercept before browser scroll handling (critical in standalone PWA)
+    canvas.addEventListener('wheel',fn,{passive:false,capture:true});
+    return function(){canvas.removeEventListener('wheel',fn,{capture:true});};
   },[]);
 
   // ─── ESCAPE KEY ───────────────────────────────────────────────────────────
@@ -1761,7 +1763,12 @@ function TacticsBoard(){
     });
   }
   function signOut(){
-    _auth.signOut().then(function(){setBoards([]);setApiKeyState('');});
+    _auth.signOut().then(function(){
+      setBoards([]);
+      setApiKeyState('');
+      setSaveMsg('You have been signed out.');
+      setTimeout(function(){setSaveMsg('');},3000);
+    });
   }
 
   // ─── API KEY IN FIRESTORE ─────────────────────────────────────────────────
@@ -2802,6 +2809,9 @@ This analysis will be used to place objects on a tactics board.`;
               <span style={{fontSize:11,color:'#555',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{fbUser.displayName||fbUser.email}</span>
               <button onClick={signOut} style={{fontSize:11,padding:'3px 10px',cursor:'pointer',borderRadius:6,border:'0.5px solid rgba(0,0,0,0.15)',background:'transparent',color:'#888',flexShrink:0,fontFamily:"'Inter',sans-serif"}}>Sign out</button>
             </div>
+          )}
+          {!fbUser&&saveMsg&&(
+            <div style={{marginTop:8,paddingTop:8,borderTop:'0.5px solid rgba(0,0,0,0.1)',fontSize:11,color:'#4A6741'}}>{saveMsg}</div>
           )}
         </div>
 

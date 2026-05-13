@@ -1,5 +1,5 @@
 // app-core.js — constants, canvas draw functions, TacticsBoard component body
-// Nutmeg&Needle Game Tracker — edit this file, not index.html
+// Nutmeg & Needle Game Tracker — edit this file, not index.html
 
 const {useState,useRef,useEffect}=React;
 

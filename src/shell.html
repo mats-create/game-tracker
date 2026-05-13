@@ -1,1 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nutmeg&amp;Needle — Tactics Board</title>
+<meta name="theme-color" content="#1A1A1A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tactics Board">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --nn-black:#1A1A1A;--nn-coral:#CC3300;--nn-green:#4A6741;
+  --nn-linen:#F0E6D3;--nn-offwht:#F5F5F5;--nn-grey:#666666;
+  --nn-coral-screen:#FF6633;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:#F0E6D3;padding:16px;min-height:100vh;overscroll-behavior:none;}
+canvas{touch-action:none;}
+input,button,textarea{font-family:'Inter',sans-serif;}
+:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
+.tb-sidebar::-webkit-scrollbar{width:4px;}
+.tb-sidebar::-webkit-scrollbar-track{background:transparent;}
+.tb-sidebar::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:4px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Firebase SDKs (compat versions — no bundler needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ─── FIREBASE INIT ────────────────────────────────────────────────────────────
+const _fbConfig = {
+  apiKey: "AIzaSyCjZT-AcshXnblgNvCBZWypmtnfWpxyWRI",
+  authDomain: "game-tracker-mph.firebaseapp.com",
+  projectId: "game-tracker-mph",
+  storageBucket: "game-tracker-mph.firebasestorage.app",
+  messagingSenderId: "1068924942895",
+  appId: "1:1068924942895:web:b6a7881446f6ba1f0e24da"
+};
+firebase.initializeApp(_fbConfig);
+const _auth = firebase.auth();
+const _db   = firebase.firestore();
+const _googleProvider = new firebase.auth.GoogleAuthProvider();
+</script>
+
+<!-- BABEL_CONTENT_PLACEHOLDER -->
+
+</body>
+</html>
 

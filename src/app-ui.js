@@ -661,12 +661,12 @@
                 ↓ Download — colour SVG
               </button>
               <Hint style={{marginTop:0}}>Full colour vector, sized to page format. Uses crop if set.</Hint>
-              <button onClick={()=>exportSVG(true)} style={{fontSize:12,padding:'7px 10px',cursor:'pointer',borderRadius:8,border:'none',background:C.blue,color:'#fff',fontWeight:500,textAlign:'left'}}>
-                ↓ Download — embroidery SVG
+              <button onClick={exportPatternPDF} style={{fontSize:12,padding:'7px 10px',cursor:'pointer',borderRadius:8,border:'none',background:C.blue,color:'#fff',fontWeight:500,textAlign:'left'}}>
+                ↓ Print — aida pattern
               </button>
-              <Hint style={{marginTop:0}}>Transparent background, Inkscape layers, physical page size.</Hint>
+              <Hint style={{marginTop:0}}>A4 landscape PDF at exact physical size. Print at 100% on aida cloth. Includes stitch-count grid.</Hint>
               <button onClick={exportPDF} style={{fontSize:12,padding:'7px 10px',cursor:'pointer',borderRadius:8,border:'none',background:C.blue,color:'#fff',fontWeight:500,textAlign:'left'}}>
-                ↓ Download — PDF instructions
+                ↓ Print — instructions
               </button>
               <Hint style={{marginTop:0}}>Pitch diagram + DMC thread colours + steps + player roster.</Hint>
             </div>

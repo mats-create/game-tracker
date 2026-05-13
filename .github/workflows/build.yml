@@ -32,4 +32,3 @@ jobs:
           git diff --cached --quiet && echo "No changes to index.html" && exit 0
           git commit -m "Auto-build: rebuild index.html from src/"
           git push
-

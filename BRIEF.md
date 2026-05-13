@@ -1,67 +1,87 @@
-# Nutmeg&Needle — Game Tracker: Project Brief
+# Nutmeg&Needle — Game Tracker BRIEF
 
-> **How to use this file**
-> Every new Claude conversation starts with: "Read BRIEF.md from `https://raw.githubusercontent.com/mats-create/game-tracker/main/BRIEF.md` and index.html from `https://raw.githubusercontent.com/mats-create/game-tracker/main/index.html` — today's task: [X]"
-> Raw URLs must be typed explicitly in the opening message — the standard GitHub URLs do not work reliably.
-> Claude updates this file at the end of each session. Mats commits the updated version to GitHub.
+This file is read at the start of every Claude conversation.
+It is the single source of truth for project context, constraints, and current status.
 
 ---
 
-## Repo & hosting
+## What this app is
 
-| Item | Value |
-|---|---|
-| GitHub repo | https://github.com/mats-create/game-tracker |
-| Live app | https://mats-create.github.io/game-tracker/ |
-| Firebase project | game-tracker-mph |
-| Main file | index.html (single-file HTML/React app, no build step) |
+A football tactics board web app for Nutmeg&Needle. Users can:
+- Place and move players on a pitch
+- Draw arrows, add symbols, place move markers
+- Generate tactical moments using AI (Anthropic API)
+- Save and load boards via Firebase Firestore
+- Export as PDF, colour SVG, or embroidery SVG
 
----
-
-## What the app is
-
-A football tactics board for designing Nutmeg&Needle embroidery kit templates. Users draw moves on a pitch canvas (players, arrows, phases, ball), then export as embroidery-ready SVG or PDF with DMC thread colour suggestions.
+**Live app:** https://mats-create.github.io/game-tracker/
+**Repo:** https://github.com/mats-create/game-tracker
 
 ---
 
-## Tech stack
+## File structure
 
-- React 18 via CDN + Babel standalone (`data-presets="react"`)
-- jsPDF for PDF export
-- Firebase Auth (Google sign-in only) + Firestore (board library)
-- Single `TacticsBoard` function component + `root.render` — no build tooling
+The app is split across four files. **Edit only the `src/` files — never `index.html` directly.**
 
----
+| File | Contents | Size |
+|---|---|---|
+| `src/app-core.js` | Constants, canvas draw functions, TacticsBoard component body | ~105KB |
+| `src/app-export.js` | SVG helpers, exportPDF, exportSVG | ~270KB |
+| `src/app-ui.js` | PlayerPanel, JSX render tree, root.render | ~64KB |
+| `src/shell.html` | HTML shell with CDN tags and Firebase init | ~3KB |
 
-## Hard technical constraints
-
-These must be respected in every code change — violations silently break things:
-
-- **No optional chaining** (`?.`) or **nullish coalescing** (`??`) — Babel standalone doesn't support them; use explicit `&&` guard chains
-- **No `ctx.roundRect()`** — not universally supported
-- **No backticks in comments**
-- **Single top-level component** (`TacticsBoard`) + `root.render`
-- **All board state in `useRef`** — never `useState` inside IIFEs within JSX render (breaks canvas + violates Rules of Hooks)
-- **Canvas transforms**: use explicit `ctx.setTransform` before phase markers rather than relying on `save()`/`restore()` balance
-- **Event icons**: pure canvas path geometry only (no emoji) — shared `eventIconSVG()` function serves both SVG and PDF
+`index.html` is **auto-built** from these files by GitHub Actions every time a `src/` file is pushed. Do not edit it manually.
 
 ---
 
-## Current feature set
+## How sessions work
 
-- Interactive pitch canvas: zoom/pan, draggable players and arrows
-- Player markers with jersey numbers and team colours
-- Arrow types: straight, curved, dashed
-- Phase/step markers with event icons
-- Ghost players and visibility toggles
-- Editable jersey numbers and team names
-- AI-assisted moment generation (Anthropic API, text + image input)
-- JSON save/load via Firebase Firestore (named board library, Google sign-in)
-- Colour SVG export
-- Embroidery SVG export (A4 landscape, Inkscape-layered)
-- PDF embroidery instructions with DMC thread suggestions
-- PWA: Web App Manifest, favicons, installable
-- Hosted via GitHub Pages
+### Starting a session
+Tell Claude which file you are working on and what the task is. Upload the relevant `src/` file(s) from GitHub.
+
+**For most tasks, only one file is needed:**
+- UI panels, controls, player list → upload `src/app-ui.js`
+- Canvas drawing, board logic, AI, zoom/pan → upload `src/app-core.js`
+- PDF export, SVG export → upload `src/app-export.js`
+- Not sure? Upload all three — they are small enough together
+
+**Example session opener:**
+> "Today's task: [describe what you want to do]. Here is the file: [upload file]"
+
+### During a session
+- Claude makes all code changes — Mats never edits code directly
+- Claude delivers the complete updated file
+- Mats downloads the updated file and uploads it to GitHub to replace the existing one
+
+### Uploading a file back to GitHub
+1. Go to the file in the repo (e.g. `src/app-ui.js`)
+2. Click the pencil (edit) icon
+3. Select all → paste the new content
+4. Commit with a short message describing the change
+
+Or drag the file onto the repo's main page if GitHub allows it.
+
+### After a session
+- Ask Claude to update the **Current status** section below
+- Commit the updated BRIEF.md to GitHub
+
+### One conversation = one task
+Planning conversations (no file needed) are cheap and useful.
+Build conversations (with file uploads) should focus on one task only.
+
+---
+
+## Technical constraints — must always be respected
+
+These are hard rules. Breaking any of them silently breaks the app.
+
+- **No optional chaining (`?.`) or nullish coalescing (`??`)** — Babel standalone with `data-presets="react"` does not support them. Use explicit `&&` guard chains instead.
+- **No `ctx.roundRect()`** — not universally supported. Use `roundRectPath()` helper instead.
+- **No backticks in comments** — breaks Babel parsing.
+- **Single top-level component** — one `TacticsBoard` function + `root.render`. Never split into multiple top-level components.
+- **All board state in `useRef(S)`** — never `useState` for board state. Stale closures will silently break canvas rendering.
+- **Canvas `ctx.save()`/`ctx.restore()` balance** — imbalance causes zoom transform to break. Use explicit `ctx.setTransform` before phase markers section.
+- **Event icons for step markers** — must use pure canvas path geometry (no emoji) so they render in SVG and PDF exports.
 
 ---
 
@@ -71,15 +91,14 @@ Material Design 3 (MD3) principles:
 - MD3 colour tokens: surface / on-surface / primary / secondary
 - Card elevation via borders (not shadows)
 - Button variants: filled, tonal, outlined
-- Typography: 14sp body / 12sp label, Inter only (400/700; 500 for UI subheadings)
-- 8px grid
+- Typography: Inter only (400/700; 500 for UI subheadings), 14sp body / 12sp label
+- 8px grid, sentence case always
 - No ripple/animation
-- Sentence case always
 - Canvas area is untouched by MD3 styling
 
 ---
 
-## Brand constraints (always apply)
+## Brand constraints — always apply
 
 - Inter only — never any other font
 - Never coral adjacent to green as foreground text — always a neutral between them
@@ -107,10 +126,10 @@ Material Design 3 (MD3) principles:
 ## Current status
 
 **Last updated:** 2026-05-13
-**Last completed:** Ways-of-working session — identified root cause of context overload (438KB single file), planned file-split restructuring
-**Current state of app:** Fully functional. Firebase Auth + Firestore, PWA, GitHub Pages. No code changes made this session.
-**Known issues / open items:** PDF embroidery pattern output under investigation (see GT4/GT5 discussion). File-split restructuring required before further feature work.
-**Next task:** Phase 1 of file-split — create named backup copy in repo, then investigate and plan the exact split
+**Last completed:** File split — app split into `src/` files, GitHub Actions auto-build working, live site confirmed working including zoom/pan
+**Current state:** Fully functional. Firebase Auth + Firestore board library, PWA manifest, GitHub Pages hosting, auto-build pipeline.
+**Known issues:** None
+**Next task:** Resume feature development — review outstanding feature list and prioritise
 
 ---
 
@@ -119,81 +138,14 @@ Material Design 3 (MD3) principles:
 | Date | Task | Outcome |
 |---|---|---|
 | 2026-05-13 | Workflow restructure | GitHub as source of truth, BRIEF.md established |
-| 2026-05-13 | Workflow fix | Raw GitHub URLs required in session openers — BRIEF.md updated |
-| 2026-05-13 | Ways of working | Root cause of context overload identified — file-split plan created |
-
----
-
-## File-split plan (NEXT MAJOR TASK)
-
-### Why
-index.html is 438KB. The fetch tool truncates at ~20% of the file, so export functions are never visible. Uploading the file as an attachment causes context overload within 1-2 exchanges. This is unsustainable for all future work.
-
-### Proposed structure after split
-
-| File | Contents | Est. size |
-|---|---|---|
-| `index.html` | HTML shell, CDN script tags, root render call only | ~5KB |
-| `app-core.js` | TacticsBoard component, state, canvas draw functions | ~200KB |
-| `app-export.js` | PDF and SVG export functions | ~100KB |
-| `app-ui.js` | JSX panels, controls, UI components | ~130KB |
-
-Each file fetchable independently via raw GitHub URL. Build sessions only load the file(s) relevant to the task.
-
-### How sessions work after the split
-
-- Export work: fetch `app-export.js` only
-- UI work: fetch `app-ui.js` only
-- Core/canvas work: fetch `app-core.js` only
-- Full context needed: fetch all three (still smaller per file than current single file)
-
-### Execution phases
-
-| Phase | Task | Status |
-|---|---|---|
-| 1 | Create named backup: `index-backup-20260513.html` committed to repo | To do |
-| 2 | Analyse file — map exact cut points, dependencies between sections | To do |
-| 3 | Build split files one at a time, test after each | To do |
-| 4 | Full end-to-end test: sign-in, draw, save, export | To do |
-
-### Rules for execution
-- Backup must be confirmed committed before any code changes
-- One phase per conversation — do not combine phases
-- Test in browser after every file change before proceeding
-- If anything breaks, roll back to backup immediately
-- Mats is non-technical — all instructions must be at "for dummies" level
-
----
-
-## How sessions work
-
-1. Start new conversation with: *"Read BRIEF.md from `https://raw.githubusercontent.com/mats-create/game-tracker/main/BRIEF.md` and index.html from `https://raw.githubusercontent.com/mats-create/game-tracker/main/index.html` — today's task: [X]"*
-2. Claude reads both files directly via raw URLs (no pasting needed) — raw URLs must be typed explicitly in the opening message
-3. Claude delivers updated `index.html` as a file
-4. Mats commits to GitHub via the web UI (Edit → paste → Commit)
-5. Claude updates BRIEF.md current status section
-6. Mats commits updated BRIEF.md
-
-**One conversation = one task. Planning conversations don't need the HTML file.**
+| 2026-05-13 | Ways of working | File-split plan created |
+| 2026-05-13 | File split | App split into src/ files, auto-build pipeline working |
 
 ---
 
 ## End of session checklist
 
-After every build session, before closing the conversation:
-
-- [ ] Commit updated `index.html` to GitHub
-- [ ] Ask Claude to produce updated "Current status" section for BRIEF.md
-- [ ] Commit updated `BRIEF.md` to GitHub
-- [ ] If any new constraints or decisions were made, ask Claude to note them in the relevant BRIEF.md section before committing
-
----
-
-## Assets note
-
-Key assets not yet in the repo (add when needed for a specific task):
-
-- Brand reference: `nn_brand_reference.html`
-- Embroidery guide: `nutmegneedle-embroidery-guide.pdf`
-- Logo package: 63 files (regenerated via `generate_logos.py`)
-- Favicon package: already in repo ✓
+- [ ] Claude delivers updated `src/` file(s)
+- [ ] Upload updated file(s) to GitHub
+- [ ] Ask Claude to update Current status section in BRIEF.md
+- [ ] Upload updated BRIEF.md to GitHub

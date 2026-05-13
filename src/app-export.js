@@ -1,4 +1,4 @@
-// app-export.js — SVG helpers, exportPDF, exportSVG
+// app-export.js — SVG helpers, exportPDF, exportPatternPDF, exportSVG
 // Nutmeg&Needle Game Tracker — edit this file, not index.html
 
 // ─── SHARED SVG HELPERS (used by both colour + embroidery export) ─────────
@@ -442,6 +442,111 @@
     doc.text(new Date().toISOString().slice(0,10),PW/2,PH-6,{align:'center'});
     doc.text('nutmegneedle.com',PW-MX,PH-6,{align:'right'});
     doc.save('tactics-board-'+new Date().toISOString().slice(0,10)+'.pdf');
+  }
+
+  // ─── EXPORT PATTERN PDF ───────────────────────────────────────────────────────
+  // Aida-ready print PDF with physically locked dimensions.
+  // Builds SVG from existing helpers, renders to offscreen canvas, embeds in jsPDF at exact pt size.
+  function exportPatternPDF(){
+    var jsPDF_=window.jspdf&&window.jspdf.jsPDF;
+    if(!jsPDF_){alert('PDF library not loaded.');return;}
+    var st=S.current;
+    var pl=st.players,arr=st.arrows,ph=st.phases,phaseColor=st.phaseColor,
+        balls=st.balls,cA=st.colorA,cB=st.colorB,v=st.view,r=st.pR,
+        cr=st.cropRegion,fmt=st.exportFormat;
+    var hs=AHEAD[st.arrowHeadSize]!==undefined?AHEAD[st.arrowHeadSize]:7;
+
+    var b=cr?{x:cr.x,y:cr.y,w:cr.w,h:cr.h}:
+           v==='left'?{x:0,y:0,w:W/2,h:H}:
+           v==='right'?{x:W/2,y:0,w:W/2,h:H}:
+           {x:0,y:0,w:W,h:H};
+
+    var MM=2.8346;
+    var STITCH_MM=25.4/14;
+    var GRID_PT=10*STITCH_MM*MM;
+    var TOP_MM=15,BOT_MM=10,SIDE_MM=10;
+    var HOOP_ASPECT=260/225;
+    var PAGE_SIZES={a4:{w:297,h:210},letter:{w:279.4,h:215.9},hoop:{w:297,h:210}};
+    var ps=PAGE_SIZES[fmt]||PAGE_SIZES['a4'];
+    var PW_PT=ps.w*MM;
+
+    var maxW=ps.w-2*SIDE_MM;
+    var maxH=ps.h-TOP_MM-BOT_MM;
+
+    var dW,dH;
+    if(fmt==='hoop'){
+      dH=maxH;dW=dH*HOOP_ASPECT;
+      if(dW>maxW){dW=maxW;dH=dW/HOOP_ASPECT;}
+    }else{
+      dW=maxW;dH=maxH;
+    }
+
+    var dW_PT=Math.round(dW*MM);
+    var dH_PT=Math.round(dH*MM);
+    var OX=Math.round((PW_PT-dW_PT)/2);
+    var OY=Math.round(TOP_MM*MM);
+    var swW=Math.round(dW/STITCH_MM);
+    var swH=Math.round(dH/STITCH_MM);
+
+    var svgLines=[];
+    svgLines.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+b.w+'" height="'+b.h+'" viewBox="'+b.x+' '+b.y+' '+b.w+' '+b.h+'">');
+    svgLines.push('<rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+b.h+'" fill="#ffffff"/>');
+    pitchSVGLines(false).forEach(function(l){svgLines.push(l);});
+    arrowSVGLines(arr,hs,false).forEach(function(l){svgLines.push(l);});
+    symbolSVGLines(st.symbols).forEach(function(l){svgLines.push(l);});
+    markerSVGLines(ph,phaseColor,st.markerSize,r).forEach(function(l){svgLines.push(l);});
+    playerSVGLines(pl,cA,cB,st,false,false).forEach(function(l){svgLines.push(l);});
+    ballSVGLines(balls,r,false).forEach(function(l){svgLines.push(l);});
+    svgLines.push('</svg>');
+    var svgStr=svgLines.join('\n');
+
+    var DPI_SCALE=Math.ceil(dW_PT/b.w*2);
+    var ocW=Math.round(b.w*DPI_SCALE);
+    var ocH=Math.round(b.h*DPI_SCALE);
+    var oc=document.createElement('canvas');
+    oc.width=ocW;oc.height=ocH;
+    var oc2=oc.getContext('2d');
+    var img=new Image();
+    var svgBlob=new Blob([svgStr],{type:'image/svg+xml;charset=utf-8'});
+    var svgUrl=URL.createObjectURL(svgBlob);
+
+    function buildPDF(){
+      oc2.drawImage(img,0,0,ocW,ocH);
+      URL.revokeObjectURL(svgUrl);
+      var pitchImg=oc.toDataURL('image/png');
+
+      var doc=new jsPDF_({orientation:'landscape',unit:'pt',format:fmt==='letter'?'letter':'a4'});
+      doc.addImage(pitchImg,'PNG',OX,OY,dW_PT,dH_PT,undefined,'FAST');
+
+      doc.setDrawColor(180,180,180);
+      doc.setLineWidth(0.3);
+      var gx=OX+GRID_PT;
+      while(gx<OX+dW_PT-1){doc.line(gx,OY,gx,OY+dH_PT);gx+=GRID_PT;}
+      var gy=OY+GRID_PT;
+      while(gy<OY+dH_PT-1){doc.line(OX,gy,OX+dW_PT,gy);gy+=GRID_PT;}
+
+      if(fmt==='hoop'){
+        doc.setDrawColor(180,50,0);doc.setLineWidth(0.5);
+        var mk=5;
+        [[OX,OY],[OX+dW_PT,OY],[OX,OY+dH_PT],[OX+dW_PT,OY+dH_PT]].forEach(function(c){
+          doc.line(c[0]-mk,c[1],c[0]+mk,c[1]);
+          doc.line(c[0],c[1]-mk,c[0],c[1]+mk);
+        });
+      }
+
+      var footY=OY+dH_PT+10;
+      doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(100,100,100);
+      var boardName=st.moment&&st.moment.heading&&st.moment.heading.trim()?st.moment.heading.trim():'Tactics Board';
+      doc.text(boardName,OX,footY);
+      doc.text(swW+' x '+swH+' stitches at 14-count aida',PW_PT/2,footY,{align:'center'});
+      doc.setTextColor(150,150,150);
+      doc.text('Print at 100% \u2014 do not scale',OX+dW_PT,footY,{align:'right'});
+      doc.save('tactics-aida-pattern-'+new Date().toISOString().slice(0,10)+'.pdf');
+    }
+
+    img.onerror=function(){alert('Pattern export error: could not render design.');};
+    img.onload=buildPDF;
+    img.src=svgUrl;
   }
 
   function exportSVG(emb=false){

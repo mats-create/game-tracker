@@ -133,3 +133,25 @@ Material Design 3 (MD3) principles:
 6. Mats commits updated BRIEF.md
 
 **One conversation = one task. Planning conversations don't need the HTML file.**
+
+---
+
+## End of session checklist
+
+After every build session, before closing the conversation:
+
+- [ ] Commit updated `index.html` to GitHub
+- [ ] Ask Claude to produce updated "Current status" section for BRIEF.md
+- [ ] Commit updated `BRIEF.md` to GitHub
+- [ ] If any new constraints or decisions were made, ask Claude to note them in the relevant BRIEF.md section before committing
+
+---
+
+## Assets note
+
+Key assets not yet in the repo (add when needed for a specific task):
+
+- Brand reference: `nn_brand_reference.html`
+- Embroidery guide: `nutmegneedle-embroidery-guide.pdf`
+- Logo package: 63 files (regenerated via `generate_logos.py`)
+- Favicon package: already in repo ✓

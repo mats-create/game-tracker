@@ -57,6 +57,10 @@ const _googleProvider = new firebase.auth.GoogleAuthProvider();
 </script>
 
 <script type="text/babel" data-presets="react">
+// ── app-core.js ─────────────────────────────────────────────────
+// app-core.js — constants, canvas draw functions, TacticsBoard component body
+// Nutmeg&Needle Game Tracker — edit this file, not index.html
+
 const {useState,useRef,useEffect}=React;
 
 // ─── CANVAS DIMENSIONS ────────────────────────────────────────────────────────
@@ -1908,7 +1912,13 @@ function TacticsBoard(){
     reader.readAsText(file);e.target.value='';
   }
 
-  // ─── SHARED SVG HELPERS (used by both colour + embroidery export) ─────────
+
+
+// ── app-export.js ───────────────────────────────────────────────
+// app-export.js — SVG helpers, exportPDF, exportSVG
+// Nutmeg&Needle Game Tracker — edit this file, not index.html
+
+// ─── SHARED SVG HELPERS (used by both colour + embroidery export) ─────────
 
   function pitchSVGLines(ink){
     const L=ink?'#1a1a2e':'rgba(255,255,255,0.88)';
@@ -2668,7 +2678,14 @@ This analysis will be used to place objects on a tactics board.`;
   },[]);
 
   // ─── PLAYER PANEL ─────────────────────────────────────────────────────────
-  // ─── PLAYER PANEL SUB-COMPONENT ───────────────────────────────────────────
+
+
+
+// ── app-ui.js ───────────────────────────────────────────────────
+// app-ui.js — PlayerPanel sub-component, JSX render tree, root.render
+// Nutmeg&Needle Game Tracker — edit this file,  not index.html
+
+// ─── PLAYER PANEL SUB-COMPONENT ───────────────────────────────────────────
   function PlayerPanel(){
     const st=S.current,team=activeTeam;
     const teamColor=team==='A'?st.colorA:st.colorB;
@@ -3506,6 +3523,10 @@ This analysis will be used to place objects on a tactics board.`;
 
 const root=ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(TacticsBoard));
+
+
 </script>
+
 </body>
 </html>
+

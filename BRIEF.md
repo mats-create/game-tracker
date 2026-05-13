@@ -106,13 +106,11 @@ Material Design 3 (MD3) principles:
 
 ## Current status
 
-*(Update this section at the end of each work session)*
-
 **Last updated:** 2026-05-13
-**Last completed:** Workflow fix — raw GitHub URLs required in session openers; BRIEF.md updated accordingly
-**Current state of app:** Fully functional single-file app with Firebase Auth + Firestore board library, PWA manifest, GitHub Pages hosting
-**Known issues / open items:** PDF embroidery pattern output under investigation (see GT4/GT5 discussion)
-**Next task:** Implement revised PDF/embroidery pattern output adapted to aida weave with controlled sizing
+**Last completed:** Ways-of-working session — identified root cause of context overload (438KB single file), planned file-split restructuring
+**Current state of app:** Fully functional. Firebase Auth + Firestore, PWA, GitHub Pages. No code changes made this session.
+**Known issues / open items:** PDF embroidery pattern output under investigation (see GT4/GT5 discussion). File-split restructuring required before further feature work.
+**Next task:** Phase 1 of file-split — create named backup copy in repo, then investigate and plan the exact split
 
 ---
 
@@ -122,6 +120,48 @@ Material Design 3 (MD3) principles:
 |---|---|---|
 | 2026-05-13 | Workflow restructure | GitHub as source of truth, BRIEF.md established |
 | 2026-05-13 | Workflow fix | Raw GitHub URLs required in session openers — BRIEF.md updated |
+| 2026-05-13 | Ways of working | Root cause of context overload identified — file-split plan created |
+
+---
+
+## File-split plan (NEXT MAJOR TASK)
+
+### Why
+index.html is 438KB. The fetch tool truncates at ~20% of the file, so export functions are never visible. Uploading the file as an attachment causes context overload within 1-2 exchanges. This is unsustainable for all future work.
+
+### Proposed structure after split
+
+| File | Contents | Est. size |
+|---|---|---|
+| `index.html` | HTML shell, CDN script tags, root render call only | ~5KB |
+| `app-core.js` | TacticsBoard component, state, canvas draw functions | ~200KB |
+| `app-export.js` | PDF and SVG export functions | ~100KB |
+| `app-ui.js` | JSX panels, controls, UI components | ~130KB |
+
+Each file fetchable independently via raw GitHub URL. Build sessions only load the file(s) relevant to the task.
+
+### How sessions work after the split
+
+- Export work: fetch `app-export.js` only
+- UI work: fetch `app-ui.js` only
+- Core/canvas work: fetch `app-core.js` only
+- Full context needed: fetch all three (still smaller per file than current single file)
+
+### Execution phases
+
+| Phase | Task | Status |
+|---|---|---|
+| 1 | Create named backup: `index-backup-20260513.html` committed to repo | To do |
+| 2 | Analyse file — map exact cut points, dependencies between sections | To do |
+| 3 | Build split files one at a time, test after each | To do |
+| 4 | Full end-to-end test: sign-in, draw, save, export | To do |
+
+### Rules for execution
+- Backup must be confirmed committed before any code changes
+- One phase per conversation — do not combine phases
+- Test in browser after every file change before proceeding
+- If anything breaks, roll back to backup immediately
+- Mats is non-technical — all instructions must be at "for dummies" level
 
 ---
 

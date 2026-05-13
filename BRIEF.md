@@ -1,7 +1,8 @@
 # Nutmeg&Needle — Game Tracker: Project Brief
 
 > **How to use this file**
-> Every new Claude conversation starts with: "Read BRIEF.md and index.html from https://github.com/mats-create/game-tracker — today's task is: [X]"
+> Every new Claude conversation starts with: "Read BRIEF.md from `https://raw.githubusercontent.com/mats-create/game-tracker/main/BRIEF.md` and index.html from `https://raw.githubusercontent.com/mats-create/game-tracker/main/index.html` — today's task: [X]"
+> Raw URLs must be typed explicitly in the opening message — the standard GitHub URLs do not work reliably.
 > Claude updates this file at the end of each session. Mats commits the updated version to GitHub.
 
 ---
@@ -108,10 +109,10 @@ Material Design 3 (MD3) principles:
 *(Update this section at the end of each work session)*
 
 **Last updated:** 2026-05-13
-**Last completed:** Repo and workflow restructure — BRIEF.md created, GitHub established as single source of truth
+**Last completed:** Workflow fix — raw GitHub URLs required in session openers; BRIEF.md updated accordingly
 **Current state of app:** Fully functional single-file app with Firebase Auth + Firestore board library, PWA manifest, GitHub Pages hosting
-**Known issues / open items:** None logged yet — to be populated as work resumes
-**Next task:** TBD — review outstanding Game Tracker 5 feature list and prioritise
+**Known issues / open items:** PDF embroidery pattern output under investigation (see GT4/GT5 discussion)
+**Next task:** Implement revised PDF/embroidery pattern output adapted to aida weave with controlled sizing
 
 ---
 
@@ -120,13 +121,14 @@ Material Design 3 (MD3) principles:
 | Date | Task | Outcome |
 |---|---|---|
 | 2026-05-13 | Workflow restructure | GitHub as source of truth, BRIEF.md established |
+| 2026-05-13 | Workflow fix | Raw GitHub URLs required in session openers — BRIEF.md updated |
 
 ---
 
 ## How sessions work
 
-1. Start new conversation with: *"Read BRIEF.md and index.html from https://github.com/mats-create/game-tracker — today's task: [X]"*
-2. Claude reads both files directly (no pasting needed)
+1. Start new conversation with: *"Read BRIEF.md from `https://raw.githubusercontent.com/mats-create/game-tracker/main/BRIEF.md` and index.html from `https://raw.githubusercontent.com/mats-create/game-tracker/main/index.html` — today's task: [X]"*
+2. Claude reads both files directly via raw URLs (no pasting needed) — raw URLs must be typed explicitly in the opening message
 3. Claude delivers updated `index.html` as a file
 4. Mats commits to GitHub via the web UI (Edit → paste → Commit)
 5. Claude updates BRIEF.md current status section

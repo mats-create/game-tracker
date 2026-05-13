@@ -5,12 +5,6 @@ build.py — assembles index.html from src/ files.
 Usage:
     python3 build.py           # build once
     python3 build.py --watch   # rebuild on every save (needs: pip install watchdog)
-
-The src/ directory must contain:
-    shell.html      HTML shell with <!-- BABEL_CONTENT_PLACEHOLDER -->
-    app-core.js     Constants, canvas, TacticsBoard body
-    app-export.js   SVG helpers, exportPDF, exportSVG
-    app-ui.js       PlayerPanel, JSX render tree, root.render
 """
 
 import os
@@ -24,7 +18,7 @@ PLACEHOLDER = "<!-- BABEL_CONTENT_PLACEHOLDER -->"
 
 # Sanity checks — things that must be present in each file
 REQUIRED = {
-    "app-core.js":   ["const{useState,useRef,useEffect}=React", "function TacticsBoard"],
+    "app-core.js":   ["useState", "function TacticsBoard"],
     "app-export.js": ["function pitchSVGLines", "function exportPDF"],
     "app-ui.js":     ["function PlayerPanel", "root.render"],
 }

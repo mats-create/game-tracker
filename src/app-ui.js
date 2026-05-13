@@ -1,5 +1,5 @@
 // app-ui.js — PlayerPanel sub-component, JSX render tree, root.render
-// Nutmeg&Needle Game Tracker — edit this file, not index.html
+// Nutmeg&Needle Game Tracker — edit this file,  not index.html
 
 // ─── PLAYER PANEL SUB-COMPONENT ───────────────────────────────────────────
   function PlayerPanel(){

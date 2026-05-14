@@ -125,8 +125,8 @@ Material Design 3 (MD3) principles:
 
 ## Current status
 
-**Last updated:** 2026-05-13
-**Last completed:** File split — app split into `src/` files, GitHub Actions auto-build working, live site confirmed working including zoom/pan
+**Last updated:** 2026-05-14
+**Last completed:** Bug fixes — zoom/pan and Memorable Moment per-board persistence
 **Current state:** Fully functional. Firebase Auth + Firestore board library, PWA manifest, GitHub Pages hosting, auto-build pipeline.
 **Known issues:** None
 **Next task:** Resume feature development — review outstanding feature list and prioritise
@@ -140,6 +140,8 @@ Material Design 3 (MD3) principles:
 | 2026-05-13 | Workflow restructure | GitHub as source of truth, BRIEF.md established |
 | 2026-05-13 | Ways of working | File-split plan created |
 | 2026-05-13 | File split | App split into src/ files, auto-build pipeline working |
+| 2026-05-14 | Bug fix: zoom/pan | Added touchAction:none to canvas — browser was intercepting wheel events inside overflow:hidden wrapper, silently ignoring preventDefault |
+| 2026-05-14 | Bug fix: Memorable Moment | Added currentBoardId state (set on loadBoard); used as key on Memorable Moment Collapsible to force remount and re-read defaultValues when board switches |
 
 ---
 

@@ -2425,49 +2425,35 @@ function TacticsBoard(){
     var OX=Math.round((PW_PT-dW_PT)/2);
     var OY=Math.round(TOP_MM*MM);
 
-    // Build SVG — pitch area only (no BOT_STRIP in viewBox height).
-    // A separate branding strip SVG element sits below via a taller canvas.
-    // This ensures circles stay circular: the pitch portion is placed in the
-    // PDF at its true aspect ratio, then branding is appended below in PDF space.
+    // Moment data for watermark
     var mo=st.moment||{};
     var wmHeading=(mo.heading&&mo.heading.trim())||'';
     var wmEvent=(mo.event&&mo.event.trim())||'';
     var wmText=wmHeading&&wmEvent?wmHeading+' \u2014 '+wmEvent:(wmHeading||wmEvent);
 
-    // SVG dimensions: pitch only — aspect ratio preserved for circle correctness
+    // PDF footer strip height (pts) — drawn via jsPDF, not SVG, so it is always reliable
+    var FOOTER_PT=20;
+
+    // Pitch-only SVG — no footer strip inside SVG, preserves true aspect ratio so circles stay circular
     var svgPitchW=b.w;
     var svgPitchH=b.h;
-    // Branding strip height in SVG units (proportional to pitch width)
-    var BOT_STRIP=Math.round(svgPitchW*0.042); // ~28px at full width
-    var svgTotalH=svgPitchH+BOT_STRIP;
 
-    // Recalculate PDF placement dimensions preserving aspect ratio
-    // Constrain to maxW and maxH (minus strip converted back to mm)
-    var stripMM=BOT_STRIP*(dW/svgPitchW);
+    // Fit pitch to page preserving aspect ratio, leaving room for jsPDF footer below
     var pitchAspect=svgPitchW/svgPitchH;
-    // Try fitting pitch width to maxW
-    var fitByW_dW=maxW;
-    var fitByW_dH=fitByW_dW/pitchAspect;
-    // Try fitting pitch height to (maxH - stripMM)
-    var fitByH_dH=maxH-stripMM;
-    var fitByH_dW=fitByH_dH*pitchAspect;
-    // Pick whichever fits
-    var pitchDW,pitchDH;
-    if(fitByW_dH+stripMM<=maxH){
-      pitchDW=fitByW_dW;pitchDH=fitByW_dH;
-    }else{
-      pitchDW=fitByH_dW;pitchDH=fitByH_dH;
-    }
-    var pitchDW_PT=Math.round(pitchDW*MM);
-    var pitchDH_PT=Math.round(pitchDH*MM);
-    var stripDH_PT=Math.round(stripMM*MM);
+    var maxPitchH=maxH-(FOOTER_PT/MM);
+    var fitDW=maxW;
+    var fitDH=fitDW/pitchAspect;
+    if(fitDH>maxPitchH){fitDH=maxPitchH;fitDW=fitDH*pitchAspect;}
+    var pitchDW_PT=Math.round(fitDW*MM);
+    var pitchDH_PT=Math.round(fitDH*MM);
     var OX2=Math.round((PW_PT-pitchDW_PT)/2);
     var OY2=Math.round(TOP_MM*MM);
 
+    // Build pitch-only SVG
     var svgLines=[];
-    svgLines.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+svgPitchW+'" height="'+svgTotalH+'" viewBox="'+b.x+' '+b.y+' '+svgPitchW+' '+svgTotalH+'">');
-    svgLines.push('<rect x="'+b.x+'" y="'+b.y+'" width="'+svgPitchW+'" height="'+svgTotalH+'" fill="#ffffff"/>');
-    // Faint pitch stripes + Pitch Green (#4A6741) lines
+    svgLines.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+svgPitchW+'" height="'+svgPitchH+'" viewBox="'+b.x+' '+b.y+' '+svgPitchW+' '+svgPitchH+'">');
+    svgLines.push('<rect x="'+b.x+'" y="'+b.y+'" width="'+svgPitchW+'" height="'+svgPitchH+'" fill="#ffffff"/>');
+    // Faint pitch stripes + Pitch Green (#4A6741) pitch lines
     pitchSVGLines(false).forEach(function(l){
       svgLines.push(
         l.replace(/fill="#3a7d44"/g,'fill="#e8f0e8"')
@@ -2479,40 +2465,33 @@ function TacticsBoard(){
     arrowSVGLines(arr,hs,false).forEach(function(l){svgLines.push(l);});
     symbolSVGLines(st.symbols).forEach(function(l){svgLines.push(l);});
     markerSVGLines(ph,phaseColor,st.markerSize,r).forEach(function(l){svgLines.push(l);});
-    // Ghost players: render with visible stroke colour for ink printing
-    pl.filter(function(p){return !p.hidden;}).forEach(function(p){
-      if(p.ghost){
-        var col=p.team==='A'?cA:cB;
-        svgLines.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+r+'" fill="rgba(255,255,255,0.0)" stroke="'+col+'" stroke-width="2" stroke-dasharray="4 3"/>');
-        svgLines.push('<text x="'+p.x.toFixed(1)+'" y="'+p.y.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="'+col+'" font-family="Inter,Helvetica,sans-serif" font-size="'+Math.max(8,r-3)+'" font-weight="bold">'+p.num+'</text>');
-      }
+    // Ghost players first — print-safe: transparent fill, solid dashed stroke in team colour
+    // Must render BEFORE playerSVGLines so solid players draw on top
+    pl.filter(function(p){return !p.hidden&&p.ghost;}).forEach(function(p){
+      var col=p.team==='A'?cA:cB;
+      svgLines.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-dasharray="4 3"/>');
+      svgLines.push('<text x="'+p.x.toFixed(1)+'" y="'+p.y.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="'+col+'" font-family="Inter,Helvetica,sans-serif" font-size="'+Math.max(8,r-3)+'" font-weight="bold">'+p.num+'</text>');
     });
-    playerSVGLines(pl,cA,cB,st,false,false).forEach(function(l){svgLines.push(l);});
-    // Ghost balls: render with visible dark stroke for ink printing
-    balls.forEach(function(bl){
-      if(bl.ghost){
-        var br2=Math.max(6,Math.round(r*0.65));
-        svgLines.push('<circle cx="'+bl.x.toFixed(1)+'" cy="'+bl.y.toFixed(1)+'" r="'+br2+'" fill="rgba(255,255,255,0.0)" stroke="#666666" stroke-width="1.5" stroke-dasharray="4 3"/>');
-      }
+    // Solid players only (no ghosts — they were already rendered above)
+    playerSVGLines(pl.filter(function(p){return !p.ghost;}),cA,cB,st,false,false).forEach(function(l){svgLines.push(l);});
+    // Ghost balls first — print-safe: transparent fill, dark dashed stroke
+    balls.filter(function(bl){return bl.ghost;}).forEach(function(bl){
+      var br2=Math.max(6,Math.round(r*0.65));
+      svgLines.push('<circle cx="'+bl.x.toFixed(1)+'" cy="'+bl.y.toFixed(1)+'" r="'+br2+'" fill="none" stroke="#888888" stroke-width="1.5" stroke-dasharray="4 3"/>');
     });
-    ballSVGLines(balls,r,false).forEach(function(l){svgLines.push(l);});
+    // Solid balls only
+    ballSVGLines(balls.filter(function(bl){return !bl.ghost;}),r,false).forEach(function(l){svgLines.push(l);});
     legendSVGLines(st,cA,cB,ph,phaseColor).forEach(function(l){svgLines.push(l);});
-    // Watermark: bottom right INSIDE pitch area, above the branding strip
+    // Watermark: bottom-right inside pitch area
     if(wmText){
-      svgLines.push('<text x="'+(b.x+svgPitchW-28)+'" y="'+(b.y+svgPitchH-10)+'" text-anchor="end" font-family="Inter,Helvetica,sans-serif" font-weight="400" font-size="9" fill="#666666" opacity="0.65">'+wmText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</text>');
+      svgLines.push('<text x="'+(b.x+svgPitchW-10)+'" y="'+(b.y+svgPitchH-10)+'" text-anchor="end" font-family="Inter,Helvetica,sans-serif" font-weight="400" font-size="9" fill="#666666" opacity="0.65">'+wmText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</text>');
     }
-    // Branding strip — BELOW pitch area
-    var bfy=b.y+svgPitchH;
-    var curYear=new Date().getFullYear();
-    svgLines.push('<line x1="'+b.x+'" y1="'+(bfy+1)+'" x2="'+(b.x+svgPitchW)+'" y2="'+(bfy+1)+'" stroke="#cccccc" stroke-width="0.5"/>');
-    svgLines.push('<text x="'+(b.x+8)+'" y="'+(bfy+BOT_STRIP*0.68)+'" font-family="Inter,Helvetica,sans-serif" font-weight="700" font-size="9" letter-spacing="-0.3" fill="#1A1A1A">Nutmeg<tspan fill="#CC3300">&amp;</tspan>Needle</text>');
-    svgLines.push('<text x="'+(b.x+svgPitchW-8)+'" y="'+(bfy+BOT_STRIP*0.68)+'" text-anchor="end" font-family="Inter,Helvetica,sans-serif" font-weight="400" font-size="8" fill="#666666">nutmegneedle.com \u00b7 '+curYear+'</text>');
     svgLines.push('</svg>');
     var svgStr=svgLines.join('\n');
 
     var DPI_SCALE=Math.ceil(pitchDW_PT/svgPitchW*2);
     var ocW=Math.round(svgPitchW*DPI_SCALE);
-    var ocH=Math.round(svgTotalH*DPI_SCALE);
+    var ocH=Math.round(svgPitchH*DPI_SCALE);
     var oc=document.createElement('canvas');
     oc.width=ocW;oc.height=ocH;
     var oc2=oc.getContext('2d');
@@ -2526,9 +2505,34 @@ function TacticsBoard(){
       var pitchImg=oc.toDataURL('image/png');
 
       var doc=new jsPDF_({orientation:'landscape',unit:'pt',format:fmt==='letter'?'letter':'a4'});
-      // Place image at aspect-ratio-correct dimensions so circles stay circular
-      var totalImgH=Math.round((pitchDH_PT+stripDH_PT));
-      doc.addImage(pitchImg,'PNG',OX2,OY2,pitchDW_PT,totalImgH,undefined,'FAST');
+      // Place pitch image at aspect-ratio-correct size — circles stay circular
+      doc.addImage(pitchImg,'PNG',OX2,OY2,pitchDW_PT,pitchDH_PT,undefined,'FAST');
+
+      // Footer: drawn via jsPDF directly, strictly below the pitch image
+      var curYear=new Date().getFullYear();
+      var footerY=OY2+pitchDH_PT; // top of footer zone (just below image)
+      var lineY=footerY+2;
+      var textY=footerY+FOOTER_PT-5;
+      var footerL=OX2;
+      var footerR=OX2+pitchDW_PT;
+      // Separator line
+      doc.setDrawColor(180,180,180);
+      doc.setLineWidth(0.4);
+      doc.line(footerL,lineY,footerR,lineY);
+      // Logo: "Nutmeg" in black, "&" in coral, "Needle" in black
+      doc.setFont('helvetica','bold');doc.setFontSize(7);
+      doc.setTextColor(26,26,26);
+      doc.text('Nutmeg',footerL,textY);
+      var nW=doc.getTextWidth('Nutmeg');
+      doc.setTextColor(204,51,0);
+      doc.text('&',footerL+nW,textY);
+      var aW=doc.getTextWidth('&');
+      doc.setTextColor(26,26,26);
+      doc.text('Needle',footerL+nW+aW,textY);
+      // URL + year right-aligned
+      doc.setFont('helvetica','normal');doc.setFontSize(7);
+      doc.setTextColor(102,102,102);
+      doc.text('nutmegneedle.com \u00b7 '+curYear,footerR,textY,{align:'right'});
 
       doc.save('tactics-aida-pattern-'+new Date().toISOString().slice(0,10)+'.pdf');
     }

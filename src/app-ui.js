@@ -706,29 +706,50 @@
 
             <div style={{height:0.5,background:'rgba(0,0,0,0.07)',margin:'4px 0 8px'}}/>
 
-            {/* Board list */}
+            {/* Board list — active board expanded with thumbnail, rest compact */}
             <div style={{fontSize:11,fontWeight:500,color:C.text,marginBottom:6}}>Saved boards</div>
             {boards.length===0&&<Hint>No boards saved yet. Save one above.</Hint>}
-            <div style={{display:'flex',flexDirection:'column',gap:6}}>
-              {boards.map(function(b){
-                const dateStr=b.updatedAt&&b.updatedAt.toDate?b.updatedAt.toDate().toLocaleDateString('sv-SE'):'';
-                return (
-                  <div key={b.id} style={{borderRadius:8,border:'0.5px solid '+C.cardBorder,overflow:'hidden',background:'#fff'}}>
-                    {b.thumbnail&&<img src={b.thumbnail} alt="" style={{width:'100%',height:60,objectFit:'cover',display:'block'}}/>}
+            {boards.length>0&&(()=>{
+              const activeBoard=boards.find(function(b){return b.id===currentBoardId;});
+              const otherBoards=boards.filter(function(b){return b.id!==currentBoardId;});
+              return <div style={{display:'flex',flexDirection:'column',gap:4}}>
+
+                {/* Active board — full card */}
+                {activeBoard&&(
+                  <div style={{borderRadius:8,border:'1.5px solid '+C.activeBorder,overflow:'hidden',background:'#fff'}}>
+                    {activeBoard.thumbnail&&<img src={activeBoard.thumbnail} alt="" style={{width:'100%',height:70,objectFit:'cover',display:'block'}}/>}
                     <div style={{padding:'6px 8px'}}>
-                      <div style={{fontSize:11,fontWeight:600,color:C.text,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.name}</div>
-                      <div style={{fontSize:10,color:C.textMuted,marginBottom:5}}>{dateStr}</div>
+                      <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:4}}>
+                        <div style={{fontSize:11,fontWeight:600,color:C.activeText,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeBoard.name}</div>
+                        <span style={{fontSize:9,padding:'1px 5px',borderRadius:4,background:C.activeBg,color:C.activeText,fontWeight:600,flexShrink:0}}>Active</span>
+                      </div>
                       <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-                        <button onClick={function(){loadBoard(b.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'1px solid '+C.blueBorder,background:C.activeBg,color:C.activeText,fontWeight:600}}>Load</button>
-                        <button onClick={function(){updateBoard(b.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.inputBorder,background:'transparent',color:C.textMid}}>Update</button>
-                        <button onClick={function(){exportBoardFromLib(b.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.inputBorder,background:'transparent',color:C.textMid}}>↓ JSON</button>
-                        <button onClick={function(){deleteBoard(b.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.inputBorder,background:'transparent',color:C.red}}>Delete</button>
+                        <button onClick={function(){updateBoard(activeBoard.id);}} disabled={libSaving} style={{fontSize:10,padding:'3px 8px',cursor:libSaving?'default':'pointer',borderRadius:5,border:'none',background:C.blue,color:'#fff',fontWeight:600}}>{libSaving?'…':'Update'}</button>
+                        <button onClick={function(){exportBoardFromLib(activeBoard.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.inputBorder,background:'transparent',color:C.textMid}}>↓ JSON</button>
+                        <button onClick={function(){deleteBoard(activeBoard.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.inputBorder,background:'transparent',color:C.red}}>Delete</button>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                )}
+
+                {/* Other boards — compact list */}
+                {otherBoards.length>0&&(
+                  <div style={{display:'flex',flexDirection:'column',gap:2,marginTop:activeBoard?4:0}}>
+                    {!activeBoard&&<Hint style={{marginBottom:4}}>Select a board to make it active.</Hint>}
+                    {otherBoards.map(function(b){
+                      const dateStr=b.updatedAt&&b.updatedAt.toDate?b.updatedAt.toDate().toLocaleDateString('sv-SE'):'';
+                      return (
+                        <button key={b.id} onClick={function(){loadBoard(b.id);}}
+                          style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'6px 8px',cursor:'pointer',borderRadius:6,border:'0.5px solid '+C.cardBorder,background:'#FAFAF8',textAlign:'left'}}>
+                          <span style={{flex:1,fontSize:11,color:C.text,fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.name}</span>
+                          <span style={{fontSize:10,color:C.textMuted,flexShrink:0,whiteSpace:'nowrap'}}>{dateStr}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>;
+            })()}
 
             <div style={{height:0.5,background:'rgba(0,0,0,0.07)',margin:'10px 0 8px'}}/>
             <div style={{fontSize:11,fontWeight:500,color:C.text,marginBottom:4}}>Import from file</div>
@@ -752,7 +773,7 @@
             <button onClick={()=>zoomStep(0.8,W/2,H/2)}  style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:16,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
             <button onClick={resetZoom} style={{height:28,padding:'0 8px',cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:11}}>Reset</button>
           </div>
-          <div style={{position:'absolute',bottom:13,right:10,fontSize:10,color:'rgba(255,255,255,0.5)',pointerEvents:'none'}}>Scroll to zoom · Middle-drag to pan</div>
+          <div style={{position:'absolute',bottom:13,right:10,fontSize:10,color:'rgba(255,255,255,0.5)',pointerEvents:'none'}}>Scroll to zoom · Space+drag to pan</div>
         </div>
 
         {/* Moves panel */}

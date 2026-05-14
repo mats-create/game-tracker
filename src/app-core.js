@@ -390,6 +390,7 @@ function TacticsBoard(){
   const [newBoardName,setNewBoardName]=useState('');
   const [saveMsg,setSaveMsg]=useState('');
   const [currentBoardId,setCurrentBoardId]=useState(null);
+  const savedBoardStateRef=useRef(null); // JSON snapshot of last saved/loaded state for dirty-check
   const [apiKey,setApiKeyState]=useState('');
   const [showKey,setShowKey]=useState(false);
 
@@ -1194,12 +1195,17 @@ function TacticsBoard(){
       const rect=canvas.getBoundingClientRect();
       const mult=e.deltaMode===1?20:e.deltaMode===2?300:1;
       if(e.ctrlKey){
+        // Pinch-to-zoom (macOS trackpad sends ctrlKey:true)
         zoomStep(e.deltaY<0?1.08:1/1.08,(e.clientX-rect.left)*W/rect.width,(e.clientY-rect.top)*H/rect.height);
-      } else if(e.deltaX!==0||(e.deltaY!==0&&!e.shiftKey)){
+      } else if(e.deltaY!==0&&e.deltaX===0){
+        // Two-finger vertical scroll → zoom at cursor position
+        zoomStep(e.deltaY<0?1.08:1/1.08,(e.clientX-rect.left)*W/rect.width,(e.clientY-rect.top)*H/rect.height);
+      } else if(e.deltaX!==0){
+        // Two-finger horizontal scroll → pan (only meaningful when zoomed in)
         const sc=vp.current.scale;
-        const dx=(e.deltaX*mult)/sc,dy=(e.deltaY*mult)/sc;
-        const c=clampVP(sc,vp.current.ox-dx,vp.current.oy-dy);
-        vp.current.ox=c.ox;vp.current.oy=c.oy;draw();
+        const dx=(e.deltaX*mult)/sc;
+        const c=clampVP(sc,vp.current.ox-dx,vp.current.oy);
+        vp.current.ox=c.ox;draw();
       }
     };
     // Block all wheel events at document level when over canvas (fixes standalone PWA scroll interception)
@@ -1776,13 +1782,16 @@ function TacticsBoard(){
     const name=(newBoardName&&newBoardName.trim())||('Board '+new Date().toLocaleDateString('sv-SE'));
     setLibSaving(true);
     const thumb=makeThumbnail();
+    const state=boardState();
     boardsRef(fbUser.uid).add({
       name:name,
       createdAt:firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
       thumbnail:thumb,
-      state:boardState()
-    }).then(function(){
+      state:state
+    }).then(function(docRef){
+      savedBoardStateRef.current=JSON.stringify(state);
+      setCurrentBoardId(docRef.id);
       setNewBoardName('');
       setLibMsg('Saved: '+name);
       setTimeout(function(){setLibMsg('');},3000);
@@ -1795,11 +1804,13 @@ function TacticsBoard(){
     if(!fbUser)return;
     setLibSaving(true);
     const thumb=makeThumbnail();
+    const state=boardState();
     boardsRef(fbUser.uid).doc(boardId).update({
       updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
       thumbnail:thumb,
-      state:boardState()
+      state:state
     }).then(function(){
+      savedBoardStateRef.current=JSON.stringify(state);
       setLibMsg('Updated.');
       setTimeout(function(){setLibMsg('');},2000);
       loadBoardList(fbUser.uid);
@@ -1807,11 +1818,22 @@ function TacticsBoard(){
     .finally(function(){setLibSaving(false);});
   }
 
+  function isBoardDirty(){
+    if(!savedBoardStateRef.current)return false;
+    try{return JSON.stringify(boardState())!==savedBoardStateRef.current;}catch{return false;}
+  }
+
   function loadBoard(boardId){
     if(!fbUser)return;
+    // Dirty-check: if active board has unsaved changes, ask user
+    if(currentBoardId&&currentBoardId!==boardId&&isBoardDirty()){
+      if(!window.confirm('You have unsaved changes. Discard and load the new board?'))return;
+    }
     boardsRef(fbUser.uid).doc(boardId).get().then(function(doc){
       if(doc.exists&&doc.data().state){
-        applyBoardState(doc.data().state);
+        const state=doc.data().state;
+        applyBoardState(state);
+        savedBoardStateRef.current=JSON.stringify(state);
         setCurrentBoardId(boardId);
         redraw();
         setLibMsg('Loaded.');

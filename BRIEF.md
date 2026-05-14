@@ -134,8 +134,8 @@ Material Design 3 (MD3) principles:
 ## Current status
 
 **Last updated:** 2026-05-14
-**Last completed:** Bug fixes — zoom/pan and Memorable Moment per-board persistence
-**Current state:** Fully functional. Firebase Auth + Firestore board library, PWA manifest, GitHub Pages hosting, auto-build pipeline.
+**Last completed:** Zoom/pan fix, Board Library redesign, Memorable Moment per-board persistence
+**Current state:** Fully functional. All fixes confirmed working by user.
 **Known issues:** None
 **Next task:** Resume feature development — review outstanding feature list and prioritise
 
@@ -148,8 +148,10 @@ Material Design 3 (MD3) principles:
 | 2026-05-13 | Workflow restructure | GitHub as source of truth, BRIEF.md established |
 | 2026-05-13 | Ways of working | File-split plan created |
 | 2026-05-13 | File split | App split into src/ files, auto-build pipeline working |
-| 2026-05-14 | Bug fix: zoom/pan | Added touchAction:none to canvas — browser was intercepting wheel events inside overflow:hidden wrapper, silently ignoring preventDefault |
-| 2026-05-14 | Bug fix: Memorable Moment | Added currentBoardId state (set on loadBoard); used as key on Memorable Moment Collapsible to force remount and re-read defaultValues when board switches |
+| 2026-05-14 | Bug fix: zoom/pan | Two-finger scroll now zooms (was routing to pan, clamped to zero at scale=1). Pinch and horizontal swipe preserved. touchAction:none added to canvas. |
+| 2026-05-14 | Bug fix: Memorable Moment | currentBoardId state + key prop forces remount on board switch, defaultValues re-read correctly |
+| 2026-05-14 | Board Library redesign | Active board shows full card with thumbnail + Update/JSON/Delete. Others show as compact list. Dirty-check on switch prompts save/discard. |
+| 2026-05-14 | Session workflow | Standard session opener established — Claude fetches src files directly from GitHub raw URLs |
 
 ---
 

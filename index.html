@@ -450,6 +450,7 @@ function TacticsBoard(){
   const [newBoardName,setNewBoardName]=useState('');
   const [saveMsg,setSaveMsg]=useState('');
   const [currentBoardId,setCurrentBoardId]=useState(null);
+  const savedBoardStateRef=useRef(null); // JSON snapshot of last saved/loaded state for dirty-check
   const [apiKey,setApiKeyState]=useState('');
   const [showKey,setShowKey]=useState(false);
 
@@ -1254,12 +1255,17 @@ function TacticsBoard(){
       const rect=canvas.getBoundingClientRect();
       const mult=e.deltaMode===1?20:e.deltaMode===2?300:1;
       if(e.ctrlKey){
+        // Pinch-to-zoom (macOS trackpad sends ctrlKey:true)
         zoomStep(e.deltaY<0?1.08:1/1.08,(e.clientX-rect.left)*W/rect.width,(e.clientY-rect.top)*H/rect.height);
-      } else if(e.deltaX!==0||(e.deltaY!==0&&!e.shiftKey)){
+      } else if(e.deltaY!==0&&e.deltaX===0){
+        // Two-finger vertical scroll → zoom at cursor position
+        zoomStep(e.deltaY<0?1.08:1/1.08,(e.clientX-rect.left)*W/rect.width,(e.clientY-rect.top)*H/rect.height);
+      } else if(e.deltaX!==0){
+        // Two-finger horizontal scroll → pan (only meaningful when zoomed in)
         const sc=vp.current.scale;
-        const dx=(e.deltaX*mult)/sc,dy=(e.deltaY*mult)/sc;
-        const c=clampVP(sc,vp.current.ox-dx,vp.current.oy-dy);
-        vp.current.ox=c.ox;vp.current.oy=c.oy;draw();
+        const dx=(e.deltaX*mult)/sc;
+        const c=clampVP(sc,vp.current.ox-dx,vp.current.oy);
+        vp.current.ox=c.ox;draw();
       }
     };
     // Block all wheel events at document level when over canvas (fixes standalone PWA scroll interception)
@@ -1836,13 +1842,16 @@ function TacticsBoard(){
     const name=(newBoardName&&newBoardName.trim())||('Board '+new Date().toLocaleDateString('sv-SE'));
     setLibSaving(true);
     const thumb=makeThumbnail();
+    const state=boardState();
     boardsRef(fbUser.uid).add({
       name:name,
       createdAt:firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
       thumbnail:thumb,
-      state:boardState()
-    }).then(function(){
+      state:state
+    }).then(function(docRef){
+      savedBoardStateRef.current=JSON.stringify(state);
+      setCurrentBoardId(docRef.id);
       setNewBoardName('');
       setLibMsg('Saved: '+name);
       setTimeout(function(){setLibMsg('');},3000);
@@ -1855,11 +1864,13 @@ function TacticsBoard(){
     if(!fbUser)return;
     setLibSaving(true);
     const thumb=makeThumbnail();
+    const state=boardState();
     boardsRef(fbUser.uid).doc(boardId).update({
       updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
       thumbnail:thumb,
-      state:boardState()
+      state:state
     }).then(function(){
+      savedBoardStateRef.current=JSON.stringify(state);
       setLibMsg('Updated.');
       setTimeout(function(){setLibMsg('');},2000);
       loadBoardList(fbUser.uid);
@@ -1867,11 +1878,22 @@ function TacticsBoard(){
     .finally(function(){setLibSaving(false);});
   }
 
+  function isBoardDirty(){
+    if(!savedBoardStateRef.current)return false;
+    try{return JSON.stringify(boardState())!==savedBoardStateRef.current;}catch{return false;}
+  }
+
   function loadBoard(boardId){
     if(!fbUser)return;
+    // Dirty-check: if active board has unsaved changes, ask user
+    if(currentBoardId&&currentBoardId!==boardId&&isBoardDirty()){
+      if(!window.confirm('You have unsaved changes. Discard and load the new board?'))return;
+    }
     boardsRef(fbUser.uid).doc(boardId).get().then(function(doc){
       if(doc.exists&&doc.data().state){
-        applyBoardState(doc.data().state);
+        const state=doc.data().state;
+        applyBoardState(state);
+        savedBoardStateRef.current=JSON.stringify(state);
         setCurrentBoardId(boardId);
         redraw();
         setLibMsg('Loaded.');
@@ -3475,29 +3497,50 @@ This analysis will be used to place objects on a tactics board.`;
 
             <div style={{height:0.5,background:'rgba(0,0,0,0.07)',margin:'4px 0 8px'}}/>
 
-            {/* Board list */}
+            {/* Board list — active board expanded with thumbnail, rest compact */}
             <div style={{fontSize:11,fontWeight:500,color:C.text,marginBottom:6}}>Saved boards</div>
             {boards.length===0&&<Hint>No boards saved yet. Save one above.</Hint>}
-            <div style={{display:'flex',flexDirection:'column',gap:6}}>
-              {boards.map(function(b){
-                const dateStr=b.updatedAt&&b.updatedAt.toDate?b.updatedAt.toDate().toLocaleDateString('sv-SE'):'';
-                return (
-                  <div key={b.id} style={{borderRadius:8,border:'0.5px solid '+C.cardBorder,overflow:'hidden',background:'#fff'}}>
-                    {b.thumbnail&&<img src={b.thumbnail} alt="" style={{width:'100%',height:60,objectFit:'cover',display:'block'}}/>}
+            {boards.length>0&&(()=>{
+              const activeBoard=boards.find(function(b){return b.id===currentBoardId;});
+              const otherBoards=boards.filter(function(b){return b.id!==currentBoardId;});
+              return <div style={{display:'flex',flexDirection:'column',gap:4}}>
+
+                {/* Active board — full card */}
+                {activeBoard&&(
+                  <div style={{borderRadius:8,border:'1.5px solid '+C.activeBorder,overflow:'hidden',background:'#fff'}}>
+                    {activeBoard.thumbnail&&<img src={activeBoard.thumbnail} alt="" style={{width:'100%',height:70,objectFit:'cover',display:'block'}}/>}
                     <div style={{padding:'6px 8px'}}>
-                      <div style={{fontSize:11,fontWeight:600,color:C.text,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.name}</div>
-                      <div style={{fontSize:10,color:C.textMuted,marginBottom:5}}>{dateStr}</div>
+                      <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:4}}>
+                        <div style={{fontSize:11,fontWeight:600,color:C.activeText,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeBoard.name}</div>
+                        <span style={{fontSize:9,padding:'1px 5px',borderRadius:4,background:C.activeBg,color:C.activeText,fontWeight:600,flexShrink:0}}>Active</span>
+                      </div>
                       <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-                        <button onClick={function(){loadBoard(b.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'1px solid '+C.blueBorder,background:C.activeBg,color:C.activeText,fontWeight:600}}>Load</button>
-                        <button onClick={function(){updateBoard(b.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.inputBorder,background:'transparent',color:C.textMid}}>Update</button>
-                        <button onClick={function(){exportBoardFromLib(b.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.inputBorder,background:'transparent',color:C.textMid}}>↓ JSON</button>
-                        <button onClick={function(){deleteBoard(b.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.inputBorder,background:'transparent',color:C.red}}>Delete</button>
+                        <button onClick={function(){updateBoard(activeBoard.id);}} disabled={libSaving} style={{fontSize:10,padding:'3px 8px',cursor:libSaving?'default':'pointer',borderRadius:5,border:'none',background:C.blue,color:'#fff',fontWeight:600}}>{libSaving?'…':'Update'}</button>
+                        <button onClick={function(){exportBoardFromLib(activeBoard.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.inputBorder,background:'transparent',color:C.textMid}}>↓ JSON</button>
+                        <button onClick={function(){deleteBoard(activeBoard.id);}} style={{fontSize:10,padding:'3px 8px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.inputBorder,background:'transparent',color:C.red}}>Delete</button>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                )}
+
+                {/* Other boards — compact list */}
+                {otherBoards.length>0&&(
+                  <div style={{display:'flex',flexDirection:'column',gap:2,marginTop:activeBoard?4:0}}>
+                    {!activeBoard&&<Hint style={{marginBottom:4}}>Select a board to make it active.</Hint>}
+                    {otherBoards.map(function(b){
+                      const dateStr=b.updatedAt&&b.updatedAt.toDate?b.updatedAt.toDate().toLocaleDateString('sv-SE'):'';
+                      return (
+                        <button key={b.id} onClick={function(){loadBoard(b.id);}}
+                          style={{display:'flex',alignItems:'center',gap:8,width:'100%',padding:'6px 8px',cursor:'pointer',borderRadius:6,border:'0.5px solid '+C.cardBorder,background:'#FAFAF8',textAlign:'left'}}>
+                          <span style={{flex:1,fontSize:11,color:C.text,fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.name}</span>
+                          <span style={{fontSize:10,color:C.textMuted,flexShrink:0,whiteSpace:'nowrap'}}>{dateStr}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>;
+            })()}
 
             <div style={{height:0.5,background:'rgba(0,0,0,0.07)',margin:'10px 0 8px'}}/>
             <div style={{fontSize:11,fontWeight:500,color:C.text,marginBottom:4}}>Import from file</div>
@@ -3521,7 +3564,7 @@ This analysis will be used to place objects on a tactics board.`;
             <button onClick={()=>zoomStep(0.8,W/2,H/2)}  style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:16,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
             <button onClick={resetZoom} style={{height:28,padding:'0 8px',cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:11}}>Reset</button>
           </div>
-          <div style={{position:'absolute',bottom:13,right:10,fontSize:10,color:'rgba(255,255,255,0.5)',pointerEvents:'none'}}>Scroll to zoom · Middle-drag to pan</div>
+          <div style={{position:'absolute',bottom:13,right:10,fontSize:10,color:'rgba(255,255,255,0.5)',pointerEvents:'none'}}>Scroll to zoom · Space+drag to pan</div>
         </div>
 
         {/* Moves panel */}

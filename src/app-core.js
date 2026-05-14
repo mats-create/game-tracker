@@ -389,6 +389,7 @@ function TacticsBoard(){
   const [libMsg,setLibMsg]=useState('');
   const [newBoardName,setNewBoardName]=useState('');
   const [saveMsg,setSaveMsg]=useState('');
+  const [currentBoardId,setCurrentBoardId]=useState(null);
   const [apiKey,setApiKeyState]=useState('');
   const [showKey,setShowKey]=useState(false);
 
@@ -1811,6 +1812,7 @@ function TacticsBoard(){
     boardsRef(fbUser.uid).doc(boardId).get().then(function(doc){
       if(doc.exists&&doc.data().state){
         applyBoardState(doc.data().state);
+        setCurrentBoardId(boardId);
         redraw();
         setLibMsg('Loaded.');
         setTimeout(function(){setLibMsg('');},2000);

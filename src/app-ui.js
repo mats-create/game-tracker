@@ -589,7 +589,7 @@
         </Collapsible>
 
         {/* 4. AI match moment */}
-        <Collapsible label="Memorable moment" defaultOpen={false}>
+        <Collapsible key={currentBoardId} label="Memorable moment" defaultOpen={false}>
           {(()=>{
             const mo=st.moment||{};
             const field=(key,label,multi,placeholder)=>(
@@ -745,7 +745,7 @@
         {/* Canvas */}
         <div style={{position:'relative',borderRadius:14,overflow:'hidden',boxShadow:'0 3px 16px rgba(0,0,0,0.13)'}}>
           <canvas ref={canvasRef} width={W} height={H}
-            style={{display:'block',width:'100%',cursor:st.mode==='crop'?'crosshair':st.mode==='move'?cursorStyle:'crosshair'}}
+            style={{display:'block',width:'100%',touchAction:'none',cursor:st.mode==='crop'?'crosshair':st.mode==='move'?cursorStyle:'crosshair'}}
             onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onLeave}/>
           <div style={{position:'absolute',bottom:10,left:10,display:'flex',gap:5,alignItems:'center'}}>
             <button onClick={()=>zoomStep(1.25,W/2,H/2)} style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:16,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>

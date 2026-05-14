@@ -37,16 +37,24 @@ The app is split across four files. **Edit only the `src/` files — never `inde
 ## How sessions work
 
 ### Starting a session
-Tell Claude which file you are working on and what the task is. Upload the relevant `src/` file(s) from GitHub.
+Open with the task description and ask Claude to fetch the current files directly from GitHub. Always use the raw URLs — this ensures Claude works from the latest committed versions, not stale uploads.
 
-**For most tasks, only one file is needed:**
-- UI panels, controls, player list → upload `src/app-ui.js`
-- Canvas drawing, board logic, AI, zoom/pan → upload `src/app-core.js`
-- PDF export, SVG export → upload `src/app-export.js`
-- Not sure? Upload all three — they are small enough together
+**Standard session opener:**
+> Today's task: [describe what you want to do].
+>
+> Please fetch the current source files from GitHub:
+> - https://raw.githubusercontent.com/mats-create/game-tracker/refs/heads/main/BRIEF.md
+> - https://raw.githubusercontent.com/mats-create/game-tracker/refs/heads/main/src/app-core.js
+> - https://raw.githubusercontent.com/mats-create/game-tracker/refs/heads/main/src/app-ui.js
+> - https://raw.githubusercontent.com/mats-create/game-tracker/refs/heads/main/src/app-export.js
 
-**Example session opener:**
-> "Today's task: [describe what you want to do]. Here is the file: [upload file]"
+Include only the files relevant to the task. BRIEF.md should always be included.
+
+**File-to-task mapping:**
+- UI panels, controls, player list → `app-ui.js`
+- Canvas drawing, board logic, AI, zoom/pan → `app-core.js`
+- PDF export, SVG export → `app-export.js`
+- Not sure? Fetch all three — they are small enough together
 
 ### During a session
 - Claude makes all code changes — Mats never edits code directly

@@ -484,13 +484,23 @@
     var OX=Math.round((PW_PT-dW_PT)/2);
     var OY=Math.round(TOP_MM*MM);
 
-    // Build SVG — faint pitch (reuse embroidery SVG colour substitution), full objects, legends included
+    // Build SVG — faint pitch, full objects, legends + bottom branding strip
+    var mo=st.moment||{};
+    var wmHeading=(mo.heading&&mo.heading.trim())||'';
+    var wmEvent=(mo.event&&mo.event.trim())||'';
+    var wmText=wmHeading&&wmEvent?wmHeading+' \u2014 '+wmEvent:(wmHeading||wmEvent);
+    var BOT_STRIP=28;
     var svgLines=[];
-    svgLines.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+b.w+'" height="'+(b.h+28)+'" viewBox="'+b.x+' '+b.y+' '+b.w+' '+(b.h+28)+'">');
-    svgLines.push('<rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+(b.h+28)+'" fill="#ffffff"/>');
-    // Faint pitch: substitute greens with light values matching embroidery SVG
+    svgLines.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+b.w+'" height="'+(b.h+BOT_STRIP)+'" viewBox="'+b.x+' '+b.y+' '+b.w+' '+(b.h+BOT_STRIP)+'">');
+    svgLines.push('<rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+(b.h+BOT_STRIP)+'" fill="#ffffff"/>');
+    // Faint pitch stripes + Pitch Green (#4A6741) lines
     pitchSVGLines(false).forEach(function(l){
-      svgLines.push(l.replace(/fill="#3a7d44"/g,'fill="#e8f0e8"').replace(/fill="#2f6b38"/g,'fill="#dceadc"').replace(/stroke="#ffffff"/g,'stroke="#cccccc"'));
+      svgLines.push(
+        l.replace(/fill="#3a7d44"/g,'fill="#e8f0e8"')
+         .replace(/fill="#2f6b38"/g,'fill="#dceadc"')
+         .replace(/stroke="rgba\(255,255,255,0\.88\)"/g,'stroke="#4A6741"')
+         .replace(/stroke="#ffffff"/g,'stroke="#4A6741"')
+      );
     });
     arrowSVGLines(arr,hs,false).forEach(function(l){svgLines.push(l);});
     symbolSVGLines(st.symbols).forEach(function(l){svgLines.push(l);});
@@ -498,12 +508,23 @@
     playerSVGLines(pl,cA,cB,st,false,false).forEach(function(l){svgLines.push(l);});
     ballSVGLines(balls,r,false).forEach(function(l){svgLines.push(l);});
     legendSVGLines(st,cA,cB,ph,phaseColor).forEach(function(l){svgLines.push(l);});
+    // Watermark inside pitch — bottom right, mid grey
+    if(wmText){
+      var pad=20;
+      svgLines.push('<text x="'+(b.x+b.w-pad-8)+'" y="'+(b.y+b.h-10)+'" text-anchor="end" font-family="Inter,Helvetica,sans-serif" font-weight="400" font-size="9" fill="#666666" opacity="0.7">'+wmText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</text>');
+    }
+    // Bottom branding strip — logo left, url + year right
+    var bfy=b.y+b.h;
+    var curYear=new Date().getFullYear();
+    svgLines.push('<line x1="'+b.x+'" y1="'+(bfy+1)+'" x2="'+(b.x+b.w)+'" y2="'+(bfy+1)+'" stroke="#e0e0e0" stroke-width="0.5"/>');
+    svgLines.push('<text x="'+(b.x+8)+'" y="'+(bfy+18)+'" font-family="Inter,Helvetica,sans-serif" font-weight="700" font-size="9" letter-spacing="-0.3" fill="#1A1A1A">Nutmeg<tspan fill="#CC3300">&amp;</tspan>Needle</text>');
+    svgLines.push('<text x="'+(b.x+b.w-8)+'" y="'+(bfy+18)+'" text-anchor="end" font-family="Inter,Helvetica,sans-serif" font-weight="400" font-size="8" fill="#666666">nutmegneedle.com \u00b7 '+curYear+'</text>');
     svgLines.push('</svg>');
     var svgStr=svgLines.join('\n');
 
     var DPI_SCALE=Math.ceil(dW_PT/b.w*2);
     var ocW=Math.round(b.w*DPI_SCALE);
-    var ocH=Math.round((b.h+28)*DPI_SCALE);
+    var ocH=Math.round((b.h+BOT_STRIP)*DPI_SCALE);
     var oc=document.createElement('canvas');
     oc.width=ocW;oc.height=ocH;
     var oc2=oc.getContext('2d');

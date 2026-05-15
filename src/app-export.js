@@ -497,16 +497,17 @@
     var svgPitchW=b.w;
     var svgPitchH=b.h;
 
-    // Fit pitch to page preserving aspect ratio, leaving room for jsPDF footer below
+    // Fit pitch to page preserving aspect ratio (footer does not affect sizing)
     var pitchAspect=svgPitchW/svgPitchH;
-    var maxPitchH=maxH-(FOOTER_PT/MM);
     var fitDW=maxW;
     var fitDH=fitDW/pitchAspect;
-    if(fitDH>maxPitchH){fitDH=maxPitchH;fitDW=fitDH*pitchAspect;}
+    if(fitDH>maxH){fitDH=maxH;fitDW=fitDH*pitchAspect;}
     var pitchDW_PT=Math.round(fitDW*MM);
     var pitchDH_PT=Math.round(fitDH*MM);
+    var PH_PT=Math.round(ps.h*MM);
     var OX2=Math.round((PW_PT-pitchDW_PT)/2);
-    var OY2=Math.round(TOP_MM*MM);
+    // Pitch centred on full page — footer placed after, does not affect pitch position.
+    var OY2=Math.round((PH_PT-pitchDH_PT)/2);
 
     // Build pitch-only SVG
     var svgLines=[];
@@ -579,7 +580,7 @@
       doc.setLineWidth(0.4);
       doc.line(footerL,lineY,footerR,lineY);
       // Logo: "Nutmeg" in black, "&" in coral, "Needle" in black
-      doc.setFont('helvetica','bold');doc.setFontSize(7);
+      doc.setFont('helvetica','bold');doc.setFontSize(9);
       doc.setTextColor(26,26,26);
       doc.text('Nutmeg',footerL,textY);
       var nW=doc.getTextWidth('Nutmeg');
@@ -589,7 +590,7 @@
       doc.setTextColor(26,26,26);
       doc.text('Needle',footerL+nW+aW,textY);
       // URL + year right-aligned
-      doc.setFont('helvetica','normal');doc.setFontSize(7);
+      doc.setFont('helvetica','normal');doc.setFontSize(9);
       doc.setTextColor(102,102,102);
       doc.text('nutmegneedle.com \u00b7 '+curYear,footerR,textY,{align:'right'});
 

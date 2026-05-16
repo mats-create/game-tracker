@@ -111,16 +111,16 @@
   function playerSVGLines(pl,cA,cB,st,ink,emb){
     const r=st.pR,out=[];
     pl.filter(p=>!p.hidden).forEach(p=>{
-      const col=p.team==='A'?cA:cB;
+      const col=p.team==='A'?cA:cB;0
       if(p.ghost){
         out.push(`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="rgba(255,255,255,0.1)" stroke="${col}" stroke-width="2.5" stroke-dasharray="4 4"/>`);
-        out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-family="sans-serif" font-size="${Math.max(9,Math.round(r*0.85))}" font-weight="bold">${p.num}</text>`);
+        out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-family="sans-serif" font-size="${Math.max(9,Math.round(r*1.1))}" font-weight="bold">${p.num}</text>`);
         return;
       }
       const ec=(p.team==='A'?st.edgeColorA:st.edgeColorB)||'#fff';
       const ew=emb?(r<=10?5:r<=14?6:7):(r<=10?2:r<=14?2.5:3);
       out.push(`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${col}" stroke="${ec}" stroke-width="${ew}"/>`);
-      out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-family="sans-serif" font-size="${Math.max(9,Math.round(r*0.85))}" font-weight="bold">${p.num}</text>`);
+      out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-family="sans-serif" font-size="${Math.max(9,Math.round(r*1.1))}" font-weight="bold">${p.num}</text>`);
       if(p.name&&r>=14){
         const nc=ink?'#1a1a2e':'rgba(255,255,255,0.9)';
         out.push(`<text x="${p.x.toFixed(1)}" y="${(p.y+r+10).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${nc}" font-family="sans-serif" font-size="${Math.max(9,r-5)}">${p.name}</text>`);

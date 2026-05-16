@@ -114,13 +114,13 @@
       const col=p.team==='A'?cA:cB;0
       if(p.ghost){
         out.push(`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="rgba(255,255,255,0.1)" stroke="${col}" stroke-width="2.5" stroke-dasharray="4 4"/>`);
-        out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-family="Inter,sans-serif" font-size="${Math.max(9,Math.round(r*1.1))}" font-weight="bold">${p.num}</text>`);
+        out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="${col}" font-size="${Math.max(9,Math.round(r*1.1))}" font-weight="bold">${p.num}</text>`);
         return;
       }
       const ec=(p.team==='A'?st.edgeColorA:st.edgeColorB)||'#fff';
       const ew=emb?(r<=10?5:r<=14?6:7):(r<=10?2:r<=14?2.5:3);
       out.push(`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${col}" stroke="${ec}" stroke-width="${ew}"/>`);
-      out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-family="Inter,sans-serif" font-size="${Math.max(9,Math.round(r*1.1))}" font-weight="bold">${p.num}</text>`);
+      out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="#fff" font-size="${Math.max(9,Math.round(r*1.1))}" font-weight="bold">${p.num}</text>`);
       if(p.name&&r>=14){
         const nc=ink?'#1a1a2e':'rgba(255,255,255,0.9)';
         out.push(`<text x="${p.x.toFixed(1)}" y="${(p.y+r+10).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${nc}" font-family="sans-serif" font-size="${Math.max(9,r-5)}">${p.name}</text>`);
@@ -191,7 +191,7 @@
         list.forEach((p,i)=>{
           const ry=ly+pad+Math.round(14*sc)+pad/2+i*lineH,dr=dotS/2;
           out.push(`  <circle cx="${cx+dr}" cy="${ry+dr}" r="${dr}" fill="${jCol}" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>`);
-          out.push(`  <text x="${cx+dr}" y="${ry+dr}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="${Math.max(8,Math.round(dr*1.2))}" font-weight="bold" fill="#fff">${p.num}</text>`);
+          out.push(`  <text x="${cx+dr}" y="${ry+dr}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" font-size="${Math.max(8,Math.round(dr*1.2))}" font-weight="bold" fill="#fff">${p.num}</text>`);
           const wrappedName=svgWrapText(p.name||'',colW2-dotS-10,nameFs);
           const nameX=cx+dotS+5,nameY=ry+dr;
           out.push(`  <text x="${nameX}" y="${nameY}" dominant-baseline="middle" font-family="sans-serif" font-size="${nameFs}" fill="${textCol}">${wrappedName.map(function(l,li){return'<tspan x="'+nameX+'" dy="'+(li===0?0:nameFs*1.2)+'">'+(l.text||'')+'</tspan>';}).join('')}</text>`);
@@ -206,7 +206,7 @@
         combined.forEach((p,i)=>{
           const ry=ly+pad+Math.round(14*sc)+pad/2+i*lineH,dr=dotS/2;
           out.push(`  <circle cx="${lx+pad+dr}" cy="${ry+dr}" r="${dr}" fill="${p.jc}" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>`);
-          out.push(`  <text x="${lx+pad+dr}" y="${ry+dr}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="${Math.max(8,Math.round(dr*1.2))}" font-weight="bold" fill="#fff">${p.num}</text>`);
+          out.push(`  <text x="${lx+pad+dr}" y="${ry+dr}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" font-size="${Math.max(8,Math.round(dr*1.2))}" font-weight="bold" fill="#fff">${p.num}</text>`);
           const wrappedName1=svgWrapText(p.name||'',boxW-dotS-10,nameFs);
           const nameX1=lx+pad+dotS+5,nameY1=ry+dr;
           out.push(`  <text x="${nameX1}" y="${nameY1}" dominant-baseline="middle" font-family="sans-serif" font-size="${nameFs}" fill="${textCol}">${wrappedName1.map(function(l,li){return'<tspan x="'+nameX1+'" dy="'+(li===0?0:nameFs*1.2)+'">'+(l.text||'')+'</tspan>';}).join('')}</text>`);
@@ -530,7 +530,7 @@
     pl.filter(function(p){return !p.hidden&&p.ghost;}).forEach(function(p){
       var col=p.team==='A'?cA:cB;
       svgLines.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-dasharray="4 3"/>');
-      svgLines.push('<text x="'+p.x.toFixed(1)+'" y="'+p.y.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="'+col+'" font-family="Inter,sans-serif" font-size="'+Math.max(9,Math.round(r*1.1))+'" font-weight="bold">'+p.num+'</text>');
+      svgLines.push('<text x="'+p.x.toFixed(1)+'" y="'+p.y.toFixed(1)+'" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="'+col+'" font-size="'+Math.max(9,Math.round(r*1.1))+'" font-weight="bold">'+p.num+'</text>');
     });
     // Solid players only (no ghosts — they were already rendered above)
     playerSVGLines(pl.filter(function(p){return !p.ghost;}),cA,cB,st,false,false).forEach(function(l){svgLines.push(l);});

@@ -21,54 +21,48 @@ A football tactics board web app for Nutmeg&Needle. Users can:
 
 ## File structure
 
-The app is split across four files. **Edit only the src/ files — never index.html directly.**
+The app is split across four files. **Edit only the `src/` files — never `index.html` directly.**
 
 | File | Contents | Size |
 |---|---|---|
-| src/app-core.js | Constants, canvas draw functions, TacticsBoard component body | ~105KB |
-| src/app-export.js | SVG helpers, exportPDF, exportPatternPDF, exportSVG | ~270KB |
-| src/app-ui.js | PlayerPanel, JSX render tree, root.render | ~64KB |
-| src/shell.html | HTML shell with CDN tags and Firebase init | ~3KB |
+| `src/app-core.js` | Constants, canvas draw functions, TacticsBoard component body | ~105KB |
+| `src/app-export.js` | SVG helpers, exportPDF, exportSVG | ~270KB |
+| `src/app-ui.js` | PlayerPanel, JSX render tree, root.render | ~64KB |
+| `src/shell.html` | HTML shell with CDN tags and Firebase init | ~3KB |
 
-index.html is auto-built from these files by GitHub Actions every time a src/ file is pushed. Do not edit it manually.
+`index.html` is **auto-built** from these files by GitHub Actions every time a `src/` file is pushed. Do not edit it manually.
 
 ---
 
 ## How sessions work
 
 ### Starting a session
-Open with the task description and ask Claude to fetch the current files directly from GitHub. Always use the raw URLs.
+Tell Claude which file you are working on and what the task is. Upload the relevant `src/` file(s) from GitHub.
 
-**Standard session opener:**
-> Today's task: [describe what you want to do].
->
-> Please fetch the current source files from GitHub:
-> - https://raw.githubusercontent.com/mats-create/game-tracker/refs/heads/main/BRIEF.md
-> - https://raw.githubusercontent.com/mats-create/game-tracker/refs/heads/main/src/app-core.js
-> - https://raw.githubusercontent.com/mats-create/game-tracker/refs/heads/main/src/app-ui.js
-> - https://raw.githubusercontent.com/mats-create/game-tracker/refs/heads/main/src/app-export.js
+**For most tasks, only one file is needed:**
+- UI panels, controls, player list → upload `src/app-ui.js`
+- Canvas drawing, board logic, AI, zoom/pan → upload `src/app-core.js`
+- PDF export, SVG export → upload `src/app-export.js`
+- Not sure? Upload all three — they are small enough together
 
-Include only the files relevant to the task. BRIEF.md should always be included.
-
-**File-to-task mapping:**
-- UI panels, controls, player list -> app-ui.js
-- Canvas drawing, board logic, AI, zoom/pan -> app-core.js
-- PDF export, SVG export -> app-export.js
-- Not sure? Fetch all three.
+**Example session opener:**
+> "Today's task: [describe what you want to do]. Here is the file: [upload file]"
 
 ### During a session
 - Claude makes all code changes — Mats never edits code directly
 - Claude delivers the complete updated file
-- Mats downloads the file and uploads it to GitHub
+- Mats downloads the updated file and uploads it to GitHub to replace the existing one
 
 ### Uploading a file back to GitHub
-1. Go to the file in the repo
+1. Go to the file in the repo (e.g. `src/app-ui.js`)
 2. Click the pencil (edit) icon
-3. Select all, paste new content
-4. Commit with a short message
+3. Select all → paste the new content
+4. Commit with a short message describing the change
+
+Or drag the file onto the repo's main page if GitHub allows it.
 
 ### After a session
-- Ask Claude to update the Current status section below
+- Ask Claude to update the **Current status** section below
 - Commit the updated BRIEF.md to GitHub
 
 ### One conversation = one task
@@ -79,13 +73,21 @@ Build conversations (with file uploads) should focus on one task only.
 
 ## Technical constraints — must always be respected
 
-- **No optional chaining (?.) or nullish coalescing (??)** — Babel standalone with data-presets="react" does not support them. Use explicit && guard chains.
-- **No ctx.roundRect()** — not universally supported. Use roundRectPath() helper instead.
+These are hard rules. Breaking any of them silently breaks the app.
+
+- **No optional chaining (`?.`) or nullish coalescing (`??`)** — Babel standalone with `data-presets="react"` does not support them. Use explicit `&&` guard chains instead.
+- **No `ctx.roundRect()`** — not universally supported. Use `roundRectPath()` helper instead.
 - **No backticks in comments** — breaks Babel parsing.
-- **Single top-level component** — one TacticsBoard function + root.render. Never split into multiple top-level components.
-- **All board state in useRef(S)** — never useState for board state. Stale closures will silently break canvas rendering.
-- **Canvas ctx.save()/ctx.restore() balance** — imbalance causes zoom transform to break. Use explicit ctx.setTransform before phase markers section.
+- **Single top-level component** — one `TacticsBoard` function + `root.render`. Never split into multiple top-level components.
+- **All board state in `useRef(S)`** — never `useState` for board state. Stale closures will silently break canvas rendering.
+- **Canvas `ctx.save()`/`ctx.restore()` balance** — imbalance causes zoom transform to break. Use explicit `ctx.setTransform` before phase markers section.
 - **Event icons for step markers** — must use pure canvas path geometry (no emoji) so they render in SVG and PDF exports.
+
+---
+
+## Known code quality issues (refactoring backlog)
+
+- **Duplicated sizing logic across app-core.js and app-export.js** — `app-export.js` has its own independent SVG string-building code that duplicates font-size calculations from `app-core.js`. This caused a bug where canvas fixes did not carry through to PDF/SVG exports. The fix is to extract shared pure helper functions (e.g. `playerNumFontSize(r)`, `markerLabelSize(half)`, `legendDotNumSize(dr)`) into a shared location and call them from both files. Not urgent, but should be done before the next round of rendering changes.
 
 ---
 
@@ -127,47 +129,13 @@ Material Design 3 (MD3) principles:
 
 ---
 
-## Aida Weave printout — design spec
-
-Generated by exportPatternPDF() in app-export.js.
-
-### Pitch placement and sizing
-- Pitch sized to fill printable area (maxW x maxH) preserving native aspect ratio — ensures circles render as circles
-- Pitch centred on the full page both horizontally and vertically
-- Footer placed below pitch after positioning is complete — has no influence on pitch sizing or placement
-
-### Pitch area
-- Background: white (#ffffff)
-- Stripe fills: faint greens (#e8f0e8 / #dceadc)
-- Pitch lines: Pitch Green (#4A6741) via regex substitution on pitchSVGLines(false) output
-- All objects rendered: arrows, symbols, step markers, players, balls, legends
-- Ghost players: fill="none", dashed stroke in team colour — rendered before playerSVGLines (which receives non-ghost players only)
-- Ghost balls: fill="none", stroke="#888888", dashed — rendered before ballSVGLines (which receives non-ghost balls only)
-- Watermark: moment.heading + " — " + moment.event, bottom-right inside pitch, Mid Grey, 9px Inter, opacity 0.65 — omitted if both fields empty
-
-### Footer (below pitch, via jsPDF — not SVG)
-Footer is drawn by jsPDF after pitch image is placed. SVG-embedded footers are unreliable due to browser clip/render bugs.
-
-- Footer strip height: 20pt
-- Separator line: light grey, 2pt below bottom edge of pitch image
-- Left: "Nutmeg&Needle" wordmark (helvetica bold 9pt; & in Coral #CC3300, rest in #1A1A1A)
-- Right: nutmegneedle.com · [current year] (helvetica normal 9pt, Mid Grey #666666)
-- Footer aligns to left and right edges of pitch image
-
-### Key implementation notes
-- SVG built at pitch native pixel dimensions only (b.w x b.h) — no footer in SVG
-- Ghost rendering order matters: ghosts first, then playerSVGLines/ballSVGLines with ghosts filtered out
-- FOOTER_PT constant exists for jsPDF footer height but must never be used in pitch sizing or centring calculations
-
----
-
 ## Current status
 
-**Last updated:** 2026-05-15
-**Last completed:** Aida Weave printout — pitch centring fix (true page centre, footer excluded from calculation), footer font size increase (7pt to 9pt)
-**Current state:** Fully functional. All fixes confirmed working.
+**Last updated:** 2026-05-16
+**Last completed:** Player number readability — fixed font sizing in both `app-core.js` (canvas) and `app-export.js` (SVG/PDF). Root cause was duplicated sizing logic; export file was never updated when core was fixed.
+**Current state:** Fully functional. Firebase Auth + Firestore board library, PWA manifest, GitHub Pages hosting, auto-build pipeline.
 **Known issues:** None
-**Next task:** TBD — review outstanding feature list and prioritise
+**Next task:** Resume feature development — review outstanding feature list and prioritise
 
 ---
 
@@ -178,23 +146,13 @@ Footer is drawn by jsPDF after pitch image is placed. SVG-embedded footers are u
 | 2026-05-13 | Workflow restructure | GitHub as source of truth, BRIEF.md established |
 | 2026-05-13 | Ways of working | File-split plan created |
 | 2026-05-13 | File split | App split into src/ files, auto-build pipeline working |
-| 2026-05-14 | Bug fix: zoom/pan | Two-finger scroll now zooms. Pinch and horizontal swipe preserved. touchAction:none added to canvas. |
-| 2026-05-14 | Bug fix: Memorable Moment | currentBoardId state + key prop forces remount on board switch, defaultValues re-read correctly |
-| 2026-05-14 | Board Library redesign | Active board shows full card with thumbnail + Update/JSON/Delete. Others show as compact list. Dirty-check on switch prompts save/discard. |
-| 2026-05-14 | Session workflow | Standard session opener established |
-| 2026-05-14 | Aida printout: pitch lines | Pitch lines changed to Pitch Green (#4A6741) |
-| 2026-05-14 | Aida printout: footer | Branding footer added below pitch via jsPDF |
-| 2026-05-14 | Aida printout: watermark | moment.heading + moment.event concatenated, bottom-right inside pitch |
-| 2026-05-14 | Aida printout: ghost objects | Ghost players and balls now visible with print-safe colours |
-| 2026-05-14 | Aida printout: circle fix | Aspect ratio preserved — prevents ovals |
-| 2026-05-15 | Aida printout: pitch centring | Pitch centred on full page both axes. Footer independent of pitch placement. |
-| 2026-05-15 | Aida printout: footer font size | Logo, URL and year bumped from 7pt to 9pt |
+| 2026-05-16 | Player number readability | Fixed font sizing in app-core.js (canvas) and app-export.js (SVG/PDF); added refactoring note to BRIEF |
 
 ---
 
 ## End of session checklist
 
-- [ ] Claude delivers updated src/ file(s)
+- [ ] Claude delivers updated `src/` file(s)
 - [ ] Upload updated file(s) to GitHub
 - [ ] Ask Claude to update Current status section in BRIEF.md
 - [ ] Upload updated BRIEF.md to GitHub

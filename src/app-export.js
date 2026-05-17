@@ -387,51 +387,64 @@
       // ── Memorable moment section ──
       if(hasMoment){
         const moW=usableW;
-        const FS_LABEL=7.5,FS_HEADING=16,FS_VALUE=9.5;
+        const FS_LABEL=7.5,FS_HEADING=15,FS_VALUE=9.5;
         const LINE_H=12.5;
-        const GAP_AFTER=7;
+        const GAP_AFTER=6;
+        const PAD_V=10,PAD_H=10; // internal card padding
         const C_LABEL=[204,51,0],C_HEADING=[26,26,26],C_VALUE=[50,48,46];
 
-        // Dry-run to measure total height
+        // Dry-run to measure total card height before drawing anything
         doc.setFontSize(FS_VALUE);
-        let dryH=14+18;
+        // Header bar row: label only (same height as thread colours bar = 15pt)
+        let dryH=15;
+        // Internal content padding top
+        dryH+=PAD_V;
         if(mo.heading&&mo.heading.trim()){
           doc.setFontSize(FS_HEADING);
-          dryH+=doc.splitTextToSize(mo.heading.trim(),moW).length*20+10;
+          dryH+=doc.splitTextToSize(mo.heading.trim(),moW-PAD_H*2).length*19+6;
         }
         doc.setFontSize(FS_VALUE);
-        const fields=[mo.what,mo.event,mo.at,mo.when,mo.who];
-        fields.forEach(function(fv){
+        const moFields=[mo.what,mo.event,mo.at,mo.when,mo.who];
+        moFields.forEach(function(fv){
           if(fv&&fv.trim()){
             dryH+=FS_LABEL+2;
-            dryH+=doc.splitTextToSize(fv.trim(),moW).length*LINE_H;
+            dryH+=doc.splitTextToSize(fv.trim(),moW-PAD_H*2).length*LINE_H;
             dryH+=GAP_AFTER;
           }
         });
-        dryH+=6;
+        // Bottom padding
+        dryH+=PAD_V;
 
-        // Coral left border accent
+        // Record card top so we can snap y cleanly after drawing
+        const cardTopY=y;
+
+        // ── Draw linen card background ──
+        const{r:moR,g:moG,b:moB}=hexToRgb('#F0E6D3');
+        doc.setFillColor(moR,moG,moB);
+        doc.rect(MX,y,usableW,dryH,'F');
+
+        // ── Header bar row — same pattern as THREAD COLOURS bar ──
+        doc.setFont('helvetica','bold');doc.setFontSize(FS_LABEL);
+        doc.setTextColor(C_LABEL[0],C_LABEL[1],C_LABEL[2]);
+        doc.text('MEMORABLE MOMENT',MX+PAD_H,y+10);
+        // Coral left border accent — full card height, 3pt wide
         doc.setDrawColor(204,51,0);doc.setLineWidth(3);
         doc.line(MX,y,MX,y+dryH);
         doc.setLineWidth(0.5);
 
-        const tx=MX+8;
-        y+=14;
-
-        // "MEMORABLE MOMENT" section label
-        doc.setFont('helvetica','bold');doc.setFontSize(FS_LABEL);
-        doc.setTextColor(C_LABEL[0],C_LABEL[1],C_LABEL[2]);
-        doc.text('MEMORABLE MOMENT',tx,y);y+=18;
+        // Move y past the header bar row into content area
+        y+=15+PAD_V;
+        const tx=MX+PAD_H;
 
         // Heading
         if(mo.heading&&mo.heading.trim()){
           doc.setFont('helvetica','bold');doc.setFontSize(FS_HEADING);
           doc.setTextColor(C_HEADING[0],C_HEADING[1],C_HEADING[2]);
-          doc.splitTextToSize(mo.heading.trim(),moW-8).forEach(function(l){doc.text(l,tx,y);y+=20;});
-          y+=8;
+          doc.splitTextToSize(mo.heading.trim(),moW-PAD_H*2).forEach(function(l){doc.text(l,tx,y);y+=19;});
+          y+=6;
         }
 
-        // Field renderer: label on own line, value on next line(s)
+        // Field renderer: coral caps label, then value
         function moField(label,value){
           if(!value||!value.trim())return;
           doc.setFont('helvetica','bold');doc.setFontSize(FS_LABEL);
@@ -440,7 +453,7 @@
           y+=FS_LABEL+2;
           doc.setFont('helvetica','normal');doc.setFontSize(FS_VALUE);
           doc.setTextColor(C_VALUE[0],C_VALUE[1],C_VALUE[2]);
-          doc.splitTextToSize(value.trim(),moW-8).forEach(function(l){doc.text(l,tx,y);y+=LINE_H;});
+          doc.splitTextToSize(value.trim(),moW-PAD_H*2).forEach(function(l){doc.text(l,tx,y);y+=LINE_H;});
           y+=GAP_AFTER;
         }
 
@@ -450,7 +463,8 @@
         moField('WHEN',mo.when);
         moField('WHO',mo.who);
 
-        y+=4;
+        // Snap y to card bottom + gap to pitch
+        y=cardTopY+dryH+10;
       }
 
       // ── Pitch image — capped at 180pt to keep document compact ──
@@ -490,13 +504,18 @@
         if(swatchIdx%2===0){swatchY1+=18;}else{swatchY2+=18;}
         swatchIdx++;
       }
+      // Pitch lines are always needed — first entry regardless of board state
+      addColour('#4A6741','Pitch lines');
       addColour(cA,tnA);
       addColour(cB,tnB);
       addColour(phaseColor,'Step markers');
-      if(st.edgeColorA&&st.edgeColorA!=='#ffffff')addColour(st.edgeColorA,tnA+' ring');
-      if(st.edgeColorB&&st.edgeColorB!=='#ffffff')addColour(st.edgeColorB,tnB+' ring');
-      balls.forEach(function(bl,bi){if(!bl.ghost)addColour('#FFFFFF','Ball'+(balls.length>1?' '+(bi+1):''));});
-      arr.forEach(function(a){if(a.color)addColour(a.color,'Arrow');});
+      // Edge colours: guard case-insensitively against plain white
+      if(st.edgeColorA&&st.edgeColorA.toLowerCase()!=='#ffffff')addColour(st.edgeColorA,tnA+' ring');
+      if(st.edgeColorB&&st.edgeColorB.toLowerCase()!=='#ffffff')addColour(st.edgeColorB,tnB+' ring');
+      // Balls: white outline thread — label reflects stitch purpose
+      balls.forEach(function(bl,bi){if(!bl.ghost)addColour('#FFFFFF','Ball outline'+(balls.length>1?' '+(bi+1):''));});
+      // Arrows: one entry per unique colour
+      arr.forEach(function(a){if(a.color)addColour(a.color,'Arrows');});
       (st.symbols||[]).forEach(function(sym,si){if(sym.color)addColour(sym.color,'Symbol '+(si+1));});
       y=Math.max(swatchY1,swatchY2)+6;
 

@@ -2670,8 +2670,8 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
     playerSVGLines(pl.filter(function(p){return !p.ghost;}),cA,cB,st,false,false).forEach(function(l){svgLines.push(l);});
     // Ghost balls first — print-safe: transparent fill, dark dashed stroke
     balls.filter(function(bl){return bl.ghost;}).forEach(function(bl){
-      var br2=ballRadius(r);
-      svgLines.push('<circle cx="'+bl.x.toFixed(1)+'" cy="'+bl.y.toFixed(1)+'" r="'+br2+'" fill="none" stroke="#888888" stroke-width="1.5" stroke-dasharray="4 3"/>');
+      var br2=ballRadius(r,st.ballSize);
+      svgLines.push('<circle cx="'+bl.x.toFixed(1)+'" cy="'+bl.y.toFixed(1)+'" r="'+br2+'" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.95)" stroke-width="2.5" stroke-dasharray="4 4"/>');
     });
     // Solid balls only
     ballSVGLines(balls.filter(function(bl){return !bl.ghost;}),r,false,st.ballSize).forEach(function(l){svgLines.push(l);});

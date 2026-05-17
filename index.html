@@ -57,7 +57,11 @@ const _googleProvider = new firebase.auth.GoogleAuthProvider();
 </script>
 
 <script type="text/babel" data-presets="react">
-// -- app-core.js ─────────────────────────────────────────────────
+// -- app-utils.js ────────────────────────────────────────────────
+// app-utils.js -- pure utility functions and constants
+// Nutmeg&Needle Game Tracker -- edit this file, not index.html
+// These have no React dependency and are used by app-core.js, app-export.js, and app-ui.js.
+
 // app-core.js — constants, canvas draw functions, TacticsBoard component body
 // Nutmeg & Needle Game Tracker — edit this file, not index.html
 
@@ -353,6 +357,12 @@ function svgWrap(text,maxChars){
   words.forEach(w=>{if((cur+' '+w).trim().length<=maxChars){cur=(cur+' '+w).trim();}else{if(cur)lines.push(cur);cur=w;}});
   if(cur)lines.push(cur);return lines;
 }
+
+
+// -- app-core.js ─────────────────────────────────────────────────
+// app-core.js -- UI primitives, TacticsBoard component body
+// Nutmeg&Needle Game Tracker -- edit this file, not index.html
+// Constants and pure utilities live in app-utils.js (loaded before this file).
 
 // ─── UI PRIMITIVES ────────────────────────────────────────────────────────────
 function Card({children,style}){return <div style={{background:C.card,border:`0.5px solid ${C.cardBorder}`,borderRadius:14,padding:'12px 14px',marginBottom:8,...style}}>{children}</div>;}
@@ -1937,6 +1947,7 @@ function TacticsBoard(){
     reader.onload=ev=>{try{applyBoardState(JSON.parse(ev.target.result));redraw();}catch{alert('Could not read board file.');}};
     reader.readAsText(file);e.target.value='';
   }
+
 
 
 

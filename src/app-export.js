@@ -139,20 +139,18 @@
         return;
       }
       out2.push(`<circle cx="${bl.x.toFixed(1)}" cy="${bl.y.toFixed(1)}" r="${br}" fill="white" stroke="${sc}" stroke-width="${sw}"/>`);
-      if(!bl.score){
-        // Pentagon panel pattern — matches canvas drawBalls
-        const pts=[];
-        for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2;pts.push([bl.x+Math.cos(a)*(br*0.38),bl.y+Math.sin(a)*(br*0.38)]);}
-        const poly=pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
-        out2.push(`<polygon points="${poly}" fill="#1a1a1a" stroke="${sc}" stroke-width="0.9"/>`);
-        for(let i=0;i<5;i++){
-          const a=i*Math.PI*2/5-Math.PI/2;
-          const ix=pts[i][0],iy=pts[i][1];
-          const ox=(bl.x+Math.cos(a)*br).toFixed(1),oy=(bl.y+Math.sin(a)*br).toFixed(1);
-          out2.push(`<line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${ox}" y2="${oy}" stroke="${sc}" stroke-width="0.9"/>`);
-          const a2=a+Math.PI*2/10,mx=(bl.x+Math.cos(a2)*(br*0.75)).toFixed(1),my=(bl.y+Math.sin(a2)*(br*0.75)).toFixed(1);
-          out2.push(`<line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${mx}" y2="${my}" stroke="${sc}" stroke-width="0.9"/>`);
-        }
+      // Pentagon panel pattern — all non-ghost balls (score balls get spikes on top)
+      const pts=[];
+      for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2;pts.push([bl.x+Math.cos(a)*(br*0.38),bl.y+Math.sin(a)*(br*0.38)]);}
+      const poly=pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
+      out2.push(`<polygon points="${poly}" fill="#1a1a1a" stroke="${sc}" stroke-width="0.9"/>`);
+      for(let i=0;i<5;i++){
+        const a=i*Math.PI*2/5-Math.PI/2;
+        const ix=pts[i][0],iy=pts[i][1];
+        const ox=(bl.x+Math.cos(a)*br).toFixed(1),oy=(bl.y+Math.sin(a)*br).toFixed(1);
+        out2.push(`<line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${ox}" y2="${oy}" stroke="${sc}" stroke-width="0.9"/>`);
+        const a2=a+Math.PI*2/10,mx=(bl.x+Math.cos(a2)*(br*0.75)).toFixed(1),my=(bl.y+Math.sin(a2)*(br*0.75)).toFixed(1);
+        out2.push(`<line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${mx}" y2="${my}" stroke="${sc}" stroke-width="0.9"/>`);
       }
       if(bl.score){
         const spikes=8,gap=2,spikeLen=br*0.55;

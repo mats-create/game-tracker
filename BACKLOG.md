@@ -234,6 +234,42 @@ function markerHalf(st, extra) {
 **Notes:**  
 Can be implemented in the same session as GT-020 -- both touch `app-core.js` only (plus `app-utils.js` for the helper). Upload both files together.
 
+---
+
+### GT-022 · Extract shared rendering size helpers to app-utils.js
+
+**Priority:** P2  
+**Confidence:** MEDIUM -- functions identified, call sites need verification across both app-core.js and app-export.js  
+**Status:** [ ]  
+**NEEDS INVESTIGATION:** Upload `app-core.js`, `app-export.js`, and `app-utils.js` to map all call sites
+
+**Background:**  
+Identified in a previous session (Game Tracker - Object Enhancements, 16 May). A sizing bug was fixed in `app-core.js` but missed in `app-export.js` because both files contained independent copies of the same sizing logic. The fix had to be applied in 6 separate places.
+
+The three sizing expressions that are duplicated between canvas draw code and SVG/PDF export code:
+
+```js
+function playerNumFontSize(r)  { return Math.max(9, Math.round(r * 0.85)); }
+function markerLabelSize(half) { return Math.max(7, Math.round(half * 1.3)); }
+function legendDotNumSize(dr)  { return Math.max(8, Math.round(dr * 1.2)); }
+```
+
+These should be defined once in `app-utils.js` and called from both `app-core.js` (canvas drawing) and `app-export.js` (SVG string building).
+
+**User story:**  
+As a developer maintaining the Game Tracker, I want shared sizing logic defined in one place so that future changes to rendering sizes only need to be made once and apply consistently to both canvas and SVG/PDF output.
+
+**Acceptance criteria:**
+- [ ] Call sites mapped in both `app-core.js` and `app-export.js` before any change
+- [ ] Three helper functions added to `app-utils.js`
+- [ ] All inline sizing expressions in `app-core.js` replaced with helper calls
+- [ ] All inline sizing expressions in `app-export.js` replaced with helper calls
+- [ ] Canvas rendering and SVG/PDF export produce identical sizes to before
+- [ ] No inline `Math.max(9, Math.round(r * 0.85))` style expressions remain for these three cases
+
+**Notes:**  
+This is the most impactful remaining refactor -- it directly prevents the class of bug that caused a 6-location fix in the past. Do not modify any rendering code without completing this first.
+
 ## Investigation queue
 
 Stories that cannot be planned or sized until files are uploaded and read.
@@ -265,3 +301,4 @@ Stories that cannot be planned or sized until files are uploaded and read.
 | 2026-05-17 | GT-003 implemented -- app-core.js reduced from 111KB to 83KB |
 | 2026-05-17 | GT-020 + GT-021 implemented -- delete consolidation and markerHalf() helper |
 | 2026-05-17 | GT-011 implemented -- UI primitives moved to app-ui.js |
+| 2026-05-17 | GT-022 added -- shared rendering size helpers (previously noted in BRIEF.md) |

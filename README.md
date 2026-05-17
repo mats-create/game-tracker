@@ -8,18 +8,20 @@ Draw football tactics on a pitch canvas — players, arrows, phases, balls — t
 
 ## Features
 
-- Interactive pitch canvas with zoom and pan
+- Interactive pitch canvas with zoom (±) and pan (↑↓←→) controls
 - Player markers with jersey numbers and team colours
-- Arrows (straight, curved, dashed) with customisable styles
-- Phase markers to sequence a move step by step
+- Ghost players (diagonal-striped, no number) and ghost balls for showing alternative positions
+- Arrows (straight, curved, dashed) with customisable styles and arrowhead sizes
+- Phase markers to sequence a move step by step, with event icons
+- Ball placement with independent size control (XS/S/M/L) and score/goal marker
 - AI-assisted moment description (Anthropic API)
 - Colour SVG export and layered embroidery SVG (Inkscape-compatible)
-- PDF export with DMC thread guide
+- PDF/aida pattern export with DMC thread guide and football pentagon ball pattern
 - Cloud board library via Firebase (Google sign-in, syncs across devices)
 
 ## Tech
 
-Single-file HTML app — React 18, Babel standalone, jsPDF, Firebase (Auth + Firestore). No build step required.
+Single-page React 18 app — Babel standalone (no build step), jsPDF, Firebase Auth + Firestore. Source split across `src/` files, concatenated into `index.html` by a GitHub Actions pipeline on every push.
 
 ## Hosting
 

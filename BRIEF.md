@@ -21,13 +21,15 @@ A football tactics board web app for Nutmeg&Needle. Users can:
 
 ## File structure
 
-The app is split across four files. **Edit only the `src/` files — never `index.html` directly.**
+The app is split across five files. **Edit only the `src/` files — never `index.html` directly.**
 
 | File | Contents | Size |
 |---|---|---|
-| `src/app-core.js` | Constants, canvas draw functions, TacticsBoard component body | ~105KB |
-| `src/app-export.js` | SVG helpers, exportPDF, exportSVG | ~270KB |
-| `src/app-ui.js` | PlayerPanel, JSX render tree, root.render | ~64KB |
+| `src/app-utils.js` | Pure utility functions, constants, sizing helpers | ~20KB |
+| `src/app-core.js` | Canvas draw functions, TacticsBoard component body, Firebase, AI | ~90KB |
+| `src/app-logos.js` | Base64 logo constants used by exportPDF | ~200KB |
+| `src/app-export.js` | SVG helpers, exportPDF, exportSVG | ~50KB |
+| `src/app-ui.js` | UI primitives, PlayerPanel, JSX render tree, root.render | ~65KB |
 | `src/shell.html` | HTML shell with CDN tags and Firebase init | ~3KB |
 
 `index.html` is **auto-built** from these files by GitHub Actions every time a `src/` file is pushed. Do not edit it manually.
@@ -55,16 +57,14 @@ Tell Claude which file you are working on and what the task is. Upload the relev
 - Mats downloads the updated file and uploads it to GitHub to replace the existing one
 
 ### Uploading a file back to GitHub
-1. Go to the file in the repo (e.g. `src/app-ui.js`)
-2. Click the pencil (edit) icon
-3. Select all → paste the new content
-4. Commit with a short message describing the change
-
-Or drag the file onto the repo's main page if GitHub allows it.
+1. Go to `src/` in the repo
+2. Click **Add file → Upload files**
+3. Drop all changed files at once
+4. Commit to `main` with a short description — GitHub Actions builds `index.html` automatically
 
 ### After a session
-- Ask Claude to update the **Current status** section below
-- Commit the updated BRIEF.md to GitHub
+- Ask Claude to update BRIEF.md, BACKLOG.md, and README.md as needed
+- Commit updated files to GitHub
 
 ### One conversation = one task
 Planning conversations (no file needed) are cheap and useful.
@@ -124,13 +124,30 @@ Material Design 3 (MD3) principles:
 
 ---
 
+## Ghost element design — locked
+
+These treatments are final and must be consistent across canvas and all three export paths (colour SVG, embroidery SVG, aida PDF).
+
+**Ghost player:**
+- Off-white (`#F5F5F5`) fill with 45° diagonal team-colour stripes at 55% opacity
+- Stripe width 2.5px, matching the dashed ring
+- Dashed team-colour ring at 2.5px
+- No jersey number
+
+**Ghost ball:**
+- `#CCCCCC` fill
+- Pentagon + spokes in `#AAAAAA` (same geometry as solid ball)
+- Dashed ring in `#AAAAAA` at 1.5px
+
+---
+
 ## Current status
 
-**Last updated:** 2026-05-17
-**Last completed:** Technical backlog created — first-iteration investigation of file sizes, code organisation, and dead code. `BACKLOG.md` added to repo.
-**Current state:** Fully functional. Firebase Auth + Firestore board library, PWA manifest, GitHub Pages hosting, auto-build pipeline. Way of working fully established.
-**Known issues:** None
-**Next task:** Work through `BACKLOG.md` — start with GT-001 (extract base64 logos from app-export.js). Upload `app-export.js` to begin.
+**Last updated:** 2026-05-17  
+**Last completed:** GT-030/031/032/033 — pan arrow buttons, ball pentagon export, independent ball size, ghost element redesign  
+**Current state:** Fully functional. Firebase Auth + Firestore board library, PWA manifest, GitHub Pages hosting, auto-build pipeline.  
+**Known issues:** None  
+**Next task:** Check BACKLOG.md for next priority item
 
 ---
 
@@ -143,6 +160,12 @@ Material Design 3 (MD3) principles:
 | 2026-05-13 | File split | App split into src/ files, auto-build pipeline working |
 | 2026-05-17 | Way of working finalised | Download/upload file workflow confirmed, session checklist created |
 | 2026-05-17 | Technical investigation | First-iteration backlog created, BACKLOG.md added to repo |
+| 2026-05-17 | GT-001/002/003 | Logo extraction, utils extraction, file size reduction |
+| 2026-05-17 | GT-010/011/020/021/022 | AI helpers, UI primitives, delete consolidation, sizing helpers |
+| 2026-05-17 | GT-030 | Wheel pan removed, ↑↓←→ + Centre buttons added |
+| 2026-05-17 | GT-031 | Pentagon pattern in all ball export paths |
+| 2026-05-17 | GT-032 | Independent ball size XS/S/M/L |
+| 2026-05-17 | GT-033 | Ghost player stripes + ghost ball grey — all paths consistent |
 
 ---
 
@@ -150,5 +173,5 @@ Material Design 3 (MD3) principles:
 
 - [ ] Claude delivers updated `src/` file(s)
 - [ ] Upload updated file(s) to GitHub
-- [ ] Ask Claude to update Current status section in BRIEF.md
-- [ ] Upload updated BRIEF.md to GitHub
+- [ ] Ask Claude to update BRIEF.md, BACKLOG.md, README.md
+- [ ] Upload updated docs to GitHub

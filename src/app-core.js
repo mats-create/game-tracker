@@ -538,8 +538,21 @@ function TacticsBoard(){
       ctx.save();
       const gr=Math.round(r*0.75);
       if(isGhost){
+        // Off-white fill with diagonal team-colour stripes
+        ctx.save();
+        ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.clip();
+        ctx.fillStyle='#F5F5F5';ctx.fillRect(p.x-r,p.y-r,r*2,r*2);
+        ctx.strokeStyle=col;ctx.lineWidth=2.2;ctx.globalAlpha=0.55;
+        const stripeGap=6,stripeCount=Math.ceil(r*4/stripeGap)+2;
+        ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.PI/4);
+        for(let si=-stripeCount;si<=stripeCount;si++){
+          const sx=si*stripeGap;
+          ctx.beginPath();ctx.moveTo(sx,-r*2);ctx.lineTo(sx,r*2);ctx.stroke();
+        }
+        ctx.restore();
+        ctx.restore();
+        ctx.globalAlpha=1;
         ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);
-        ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fill();
         ctx.setLineDash([4,4]);ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.stroke();ctx.setLineDash([]);
       }else{
         ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
@@ -549,7 +562,7 @@ function TacticsBoard(){
       }
       const contrast=st.labelContrast||'normal',fs=playerNumFS(r);
       ctx.font=`bold ${fs}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-      if(isGhost){ctx.font=`bold ${playerNumFS(r)}px Inter,sans-serif`;ctx.strokeStyle='rgba(0,0,0,0.82)';ctx.lineWidth=3;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle=col;ctx.fillText(p.num,p.x,p.y);}
+      if(isGhost){/* no number on ghost players */}
       else if(contrast==='outline'){ctx.strokeStyle='rgba(0,0,0,0.88)';ctx.lineWidth=3;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle='#fff';ctx.fillText(p.num,p.x,p.y);}
       else if(contrast==='dark'){ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=2;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle='#111';ctx.fillText(p.num,p.x,p.y);}
       else{ctx.fillStyle='#fff';ctx.fillText(p.num,p.x,p.y);}
@@ -572,8 +585,19 @@ function TacticsBoard(){
       ctx.save();
       if(ghost){
         ctx.beginPath();ctx.arc(bx,by,br2,0,Math.PI*2);
-        ctx.fillStyle='rgba(255,255,255,0.1)';ctx.fill();
-        ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(255,255,255,0.95)';ctx.lineWidth=2.5;ctx.stroke();ctx.setLineDash([]);
+        ctx.fillStyle='#F0E6D3';ctx.fill();
+        ctx.beginPath();
+        for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2,px=bx+Math.cos(a)*(br2*0.38),py=by+Math.sin(a)*(br2*0.38);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+        ctx.closePath();ctx.strokeStyle='#AAAAAA';ctx.lineWidth=0.9;ctx.stroke();
+        for(let i=0;i<5;i++){
+          const a=i*Math.PI*2/5-Math.PI/2;
+          const ix=bx+Math.cos(a)*(br2*0.38),iy=by+Math.sin(a)*(br2*0.38);
+          ctx.beginPath();ctx.moveTo(ix,iy);ctx.lineTo(bx+Math.cos(a)*br2,by+Math.sin(a)*br2);ctx.stroke();
+          const a2=a+Math.PI*2/10;
+          ctx.beginPath();ctx.moveTo(ix,iy);ctx.lineTo(bx+Math.cos(a2)*(br2*0.75),by+Math.sin(a2)*(br2*0.75));ctx.stroke();
+        }
+        ctx.setLineDash([4,4]);ctx.strokeStyle='#AAAAAA';ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.arc(bx,by,br2,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
       }else{
         ctx.beginPath();ctx.arc(bx,by,br2,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
         ctx.strokeStyle=sel?C.blue:'#333';ctx.lineWidth=sel?2:1.2;ctx.stroke();

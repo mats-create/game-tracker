@@ -108,13 +108,30 @@
 
 
 
+  function ghostPlayerSVG(p,r,col){
+    // Diagonal stripe ghost player — off-white fill, team-colour stripes + dashed ring, no number
+    const id='gp'+p.id.toString().replace(/[^a-z0-9]/gi,'');
+    const lines=[];
+    lines.push(`<defs>`);
+    lines.push(`  <pattern id="str${id}" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">`);
+    lines.push(`    <rect width="6" height="6" fill="#F5F5F5"/>`);
+    lines.push(`    <line x1="0" y1="0" x2="0" y2="6" stroke="${col}" stroke-width="2.2" opacity="0.55"/>`);
+    lines.push(`  </pattern>`);
+    lines.push(`  <clipPath id="cp${id}">`);
+    lines.push(`    <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}"/>`);
+    lines.push(`  </clipPath>`);
+    lines.push(`</defs>`);
+    lines.push(`<rect x="${(p.x-r).toFixed(1)}" y="${(p.y-r).toFixed(1)}" width="${(r*2).toFixed(1)}" height="${(r*2).toFixed(1)}" fill="url(#str${id})" clip-path="url(#cp${id})"/>`);
+    lines.push(`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="none" stroke="${col}" stroke-width="2.5" stroke-dasharray="4 4"/>`);
+    return lines;
+  }
+
   function playerSVGLines(pl,cA,cB,st,ink,emb){
     const r=st.pR,out=[];
     pl.filter(p=>!p.hidden).forEach(p=>{
       const col=p.team==='A'?cA:cB;0
       if(p.ghost){
-        out.push(`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="rgba(255,255,255,0.1)" stroke="${col}" stroke-width="2.5" stroke-dasharray="4 4"/>`);
-        out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="${col}" font-size="${playerNumFS(r)}" font-weight="bold">${p.num}</text>`);
+        ghostPlayerSVG(p,r,col).forEach(l=>out.push(l));
         return;
       }
       const ec=(p.team==='A'?st.edgeColorA:st.edgeColorB)||'#fff';
@@ -135,7 +152,19 @@
     const out2=[];
     balls.forEach(bl=>{
       if(bl.ghost){
-        out2.push(`<circle cx="${bl.x.toFixed(1)}" cy="${bl.y.toFixed(1)}" r="${br}" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.95)" stroke-width="2.5" stroke-dasharray="4 4"/>`);
+        const pts=[];
+        for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2;pts.push([bl.x+Math.cos(a)*(br*0.38),bl.y+Math.sin(a)*(br*0.38)]);}
+        const poly=pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
+        out2.push(`<circle cx="${bl.x.toFixed(1)}" cy="${bl.y.toFixed(1)}" r="${br}" fill="#F0E6D3" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4 4"/>`);
+        out2.push(`<polygon points="${poly}" fill="none" stroke="#AAAAAA" stroke-width="0.9"/>`);
+        for(let i=0;i<5;i++){
+          const a=i*Math.PI*2/5-Math.PI/2;
+          const ix=pts[i][0],iy=pts[i][1];
+          const ox=(bl.x+Math.cos(a)*br).toFixed(1),oy=(bl.y+Math.sin(a)*br).toFixed(1);
+          out2.push(`<line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${ox}" y2="${oy}" stroke="#AAAAAA" stroke-width="0.9"/>`);
+          const a2=a+Math.PI*2/10,mx=(bl.x+Math.cos(a2)*(br*0.75)).toFixed(1),my=(bl.y+Math.sin(a2)*(br*0.75)).toFixed(1);
+          out2.push(`<line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${mx}" y2="${my}" stroke="#AAAAAA" stroke-width="0.9"/>`);
+        }
         return;
       }
       out2.push(`<circle cx="${bl.x.toFixed(1)}" cy="${bl.y.toFixed(1)}" r="${br}" fill="white" stroke="${sc}" stroke-width="${sw}"/>`);
@@ -542,15 +571,26 @@
     // Must render BEFORE playerSVGLines so solid players draw on top
     pl.filter(function(p){return !p.hidden&&p.ghost;}).forEach(function(p){
       var col=p.team==='A'?cA:cB;
-      svgLines.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-dasharray="4 3"/>');
-      svgLines.push('<text x="'+p.x.toFixed(1)+'" y="'+p.y.toFixed(1)+'" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="'+col+'" font-size="'+playerNumFS(r)+'" font-weight="bold">'+p.num+'</text>');
+      ghostPlayerSVG(p,r,col).forEach(function(l){svgLines.push(l);});
     });
     // Solid players only (no ghosts — they were already rendered above)
     playerSVGLines(pl.filter(function(p){return !p.ghost;}),cA,cB,st,false,false).forEach(function(l){svgLines.push(l);});
     // Ghost balls first — print-safe: transparent fill, dark dashed stroke
     balls.filter(function(bl){return bl.ghost;}).forEach(function(bl){
       var br2=ballRadius(r,st.ballSize);
-      svgLines.push('<circle cx="'+bl.x.toFixed(1)+'" cy="'+bl.y.toFixed(1)+'" r="'+br2+'" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.95)" stroke-width="2.5" stroke-dasharray="4 4"/>');
+      var pts2=[];
+      for(var i=0;i<5;i++){var a2=i*Math.PI*2/5-Math.PI/2;pts2.push([bl.x+Math.cos(a2)*(br2*0.38),bl.y+Math.sin(a2)*(br2*0.38)]);}
+      var poly2=pts2.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
+      svgLines.push('<circle cx="'+bl.x.toFixed(1)+'" cy="'+bl.y.toFixed(1)+'" r="'+br2+'" fill="#F0E6D3" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4 4"/>');
+      svgLines.push('<polygon points="'+poly2+'" fill="none" stroke="#AAAAAA" stroke-width="0.9"/>');
+      for(var j=0;j<5;j++){
+        var aj=j*Math.PI*2/5-Math.PI/2;
+        var ix2=pts2[j][0],iy2=pts2[j][1];
+        var ox2=(bl.x+Math.cos(aj)*br2).toFixed(1),oy2=(bl.y+Math.sin(aj)*br2).toFixed(1);
+        svgLines.push('<line x1="'+ix2.toFixed(1)+'" y1="'+iy2.toFixed(1)+'" x2="'+ox2+'" y2="'+oy2+'" stroke="#AAAAAA" stroke-width="0.9"/>');
+        var aj2=aj+Math.PI*2/10,mx2=(bl.x+Math.cos(aj2)*(br2*0.75)).toFixed(1),my2=(bl.y+Math.sin(aj2)*(br2*0.75)).toFixed(1);
+        svgLines.push('<line x1="'+ix2.toFixed(1)+'" y1="'+iy2.toFixed(1)+'" x2="'+mx2+'" y2="'+my2+'" stroke="#AAAAAA" stroke-width="0.9"/>');
+      }
     });
     // Solid balls only
     ballSVGLines(balls.filter(function(bl){return !bl.ghost;}),r,false,st.ballSize).forEach(function(l){svgLines.push(l);});

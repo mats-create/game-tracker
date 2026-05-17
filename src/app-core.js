@@ -17,11 +17,7 @@ function TacticsBoard(){
     edgeColorA:'#ffffff',edgeColorB:'#ffffff',
     teamNameA:'',teamNameB:'',
     arrowColor:'#F5F5F5',arrowStyle:'solid',arrowShape:'straight',arrowHeadSize:'m',
-    view:'full',pR:14,markerSize:'m',activePh:0,labelContrast:'outline',
-    legend:{x:10,y:10,scale:1,w:null,h:null,textColor:'#222',cols:2},
-    stepLegend:{x:10,y:60,scale:1,w:null,h:null,textColor:'#333'},
-    symbols:[],symbolColor:'#F5F5F5',symbolSize:'m',symbolType:'goal',
-    selectedArrowIdx:null,selectedBallIdx:null,selectedPhaseMarker:null,selectedSymbolIdx:null,selectedGhostId:null,showGrid:false,
+    view:'full',pR:14,markerSize:'m',ballSize:'m',activePh:0,labelContrast:'outline',
     multiSelection:[],
     mode:'move',
     cropRegion:null,cropSelected:false,
@@ -83,6 +79,8 @@ function TacticsBoard(){
     return{ox:Math.min(0,Math.max(minOx,ox)),oy:Math.min(0,Math.max(minOy,oy))};
   }
   function resetZoom(){vp.current={scale:1,ox:0,oy:0,panning:false,panStart:null};redraw();}
+  function resetPan(){const v=vp.current;const c=clampVP(v.scale,0,0);vp.current={...v,ox:c.ox,oy:c.oy};redraw();}
+  function panStep(dx,dy){const v=vp.current;const step=60/v.scale;const c=clampVP(v.scale,v.ox+dx*step,v.oy+dy*step);vp.current={...v,ox:c.ox,oy:c.oy};redraw();}
   function zoomStep(delta,cx,cy){
     const v=vp.current,newScale=Math.max(1,Math.min(4,v.scale*delta)),ratio=newScale/v.scale;
     const c=clampVP(newScale,cx-(cx-v.ox)*ratio,cy-(cy-v.oy)*ratio);
@@ -568,8 +566,8 @@ function TacticsBoard(){
   }
 
   // ─── DRAW: BALLS ──────────────────────────────────────────────────────────
-  function drawBalls(ctx,balls,selB,v,pR){
-    const br=ballRadius(pR);
+  function drawBalls(ctx,balls,selB,v,pR,ballSize){
+    const br=ballRadius(pR,ballSize);
     function drawOne(bx,by,br2,sel,ghost,score){
       ctx.save();
       if(ghost){
@@ -824,7 +822,7 @@ function TacticsBoard(){
     ctx.setTransform(scale,0,0,scale,ox,oy);
     drawPhaseMarkers(ctx,ph,phaseColor,selPM,st);
     drawPlayers(ctx,pl,v,r,cA,cB,st);
-    drawBalls(ctx,balls,selB,v,r);
+    drawBalls(ctx,balls,selB,v,r,st.ballSize);
     drawSymbols(ctx,st.symbols,st.selectedSymbolIdx);
     // Draw multi-select outlines
     (st.multiSelection||[]).forEach(function(item){
@@ -855,39 +853,7 @@ function TacticsBoard(){
   useEffect(()=>{draw();},[tick]);
   useEffect(()=>{if(fbAuthReady&&fbUser)draw();},[fbAuthReady]);
 
-  // ─── WHEEL: pinch/ctrl+scroll zooms, two-finger scroll pans ──────────────
-  useEffect(()=>{
-    const canvas=canvasRef.current;if(!canvas)return;
-    const fn=function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      const rect=canvas.getBoundingClientRect();
-      const mult=e.deltaMode===1?20:e.deltaMode===2?300:1;
-      if(e.ctrlKey){
-        // Pinch-to-zoom (macOS trackpad sends ctrlKey:true)
-        zoomStep(e.deltaY<0?1.08:1/1.08,(e.clientX-rect.left)*W/rect.width,(e.clientY-rect.top)*H/rect.height);
-      } else if(e.deltaY!==0&&e.deltaX===0){
-        // Two-finger vertical scroll → zoom at cursor position
-        zoomStep(e.deltaY<0?1.08:1/1.08,(e.clientX-rect.left)*W/rect.width,(e.clientY-rect.top)*H/rect.height);
-      } else if(e.deltaX!==0){
-        // Two-finger horizontal scroll → pan (only meaningful when zoomed in)
-        const sc=vp.current.scale;
-        const dx=(e.deltaX*mult)/sc;
-        const c=clampVP(sc,vp.current.ox-dx,vp.current.oy);
-        vp.current.ox=c.ox;draw();
-      }
-    };
-    // Block all wheel events at document level when over canvas (fixes standalone PWA scroll interception)
-    const docBlock=function(e){
-      if(e.target===canvas||canvas.contains(e.target)){e.preventDefault();}
-    };
-    canvas.addEventListener('wheel',fn,{passive:false,capture:true});
-    document.addEventListener('wheel',docBlock,{passive:false,capture:true});
-    return function(){
-      canvas.removeEventListener('wheel',fn,{capture:true});
-      document.removeEventListener('wheel',docBlock,{capture:true});
-    };
-  },[fbAuthReady]);
+
 
   // ─── ESCAPE KEY ───────────────────────────────────────────────────────────
   useEffect(()=>{
@@ -1256,13 +1222,7 @@ function TacticsBoard(){
           colorA:'#E24B4A',colorB:'#378ADD',edgeColorA:'#ffffff',edgeColorB:'#ffffff',
           teamNameA:'',teamNameB:'',
           arrowColor:'#F5F5F5',arrowStyle:'solid',arrowShape:'straight',arrowHeadSize:'m',
-          view:'full',pR:14,markerSize:'m',activePh:0,labelContrast:'outline',
-          legend:{x:10,y:10,scale:1,w:null,h:null,textColor:'#222',cols:2},
-          stepLegend:{x:10,y:60,scale:1,w:null,h:null,textColor:'#333'},
-          symbols:[],symbolColor:'#F5F5F5',symbolSize:'m',symbolType:'goal',
-          selectedArrowIdx:null,selectedBallIdx:null,selectedPhaseMarker:null,selectedSymbolIdx:null,
-          multiSelection:[],
-          mode:'move',cropRegion:null,cropSelected:false,exportFormat:'a4',exportOrientation:'landscape',
+          view:'full',pR:14,markerSize:'m',ballSize:'m',activePh:0,labelContrast:'outline',
           moment:{heading:'',what:'',event:'',at:'',when:'',who:''},
         };
         ar.current={drawing:false,aStart:null,cPath:[],cpCtrl:null,cpPhase:0,startAnchor:null};
@@ -1314,8 +1274,7 @@ function TacticsBoard(){
       colorA:'#E24B4A',colorB:'#378ADD',edgeColorA:'#ffffff',edgeColorB:'#ffffff',
       teamNameA:'',teamNameB:'',
       arrowColor:'#F5F5F5',arrowStyle:'solid',arrowShape:'straight',arrowHeadSize:'m',
-      view:'full',pR:14,markerSize:'m',activePh:0,labelContrast:'outline',
-      legend:{x:10,y:10,scale:1,w:null,h:null,textColor:'#222',cols:2},stepLegend:{x:10,y:60,scale:1,w:null,h:null,textColor:'#333'},
+      view:'full',pR:14,markerSize:'m',ballSize:'m',activePh:0,labelContrast:'outline',
       symbols:[],symbolColor:'#F5F5F5',symbolSize:'m',symbolType:'goal',
       selectedArrowIdx:null,selectedBallIdx:null,selectedPhaseMarker:null,selectedSymbolIdx:null,selectedGhostId:null,showGrid:false,showGrid:false,
       multiSelection:[],
@@ -1339,7 +1298,7 @@ function TacticsBoard(){
       colorA:st.colorA,colorB:st.colorB,edgeColorA:st.edgeColorA,edgeColorB:st.edgeColorB,
       teamNameA:st.teamNameA,teamNameB:st.teamNameB,
       arrowColor:st.arrowColor,arrowHeadSize:st.arrowHeadSize,arrowShape:st.arrowShape,arrowStyle:st.arrowStyle,
-      view:st.view,pR:st.pR,markerSize:st.markerSize,labelContrast:st.labelContrast,activePh:st.activePh,
+      view:st.view,pR:st.pR,markerSize:st.markerSize,ballSize:st.ballSize||'m',labelContrast:st.labelContrast,activePh:st.activePh,
       legend:st.legend,stepLegend:st.stepLegend,
       symbols:JSON.parse(JSON.stringify(st.symbols||[])),symbolColor:st.symbolColor,symbolSize:st.symbolSize,symbolType:st.symbolType,
       cropRegion:st.cropRegion,cropSelected:false,exportFormat:st.exportFormat,exportOrientation:st.exportOrientation,
@@ -1349,7 +1308,7 @@ function TacticsBoard(){
   function applyBoardState(data){
     const fields=['players','arrows','phases','phaseColor','balls','colorA','colorB',
       'edgeColorA','edgeColorB','teamNameA','teamNameB','arrowColor','arrowHeadSize',
-      'arrowShape','arrowStyle','view','pR','markerSize','labelContrast','activePh',
+      'arrowShape','arrowStyle','view','pR','markerSize','ballSize','labelContrast','activePh',
       'legend','stepLegend','cropRegion','cropSelected','exportFormat','exportOrientation','moment',
       'symbols','symbolColor','symbolSize','symbolType'];
     fields.forEach(function(f){if(data[f]!==undefined)S.current[f]=data[f];});
@@ -1438,7 +1397,7 @@ function TacticsBoard(){
       drawPitch(ctx2,st2.view);
       drawArrows(ctx2,st2.arrows,null,AHEAD[st2.arrowHeadSize]!==undefined?AHEAD[st2.arrowHeadSize]:7);
       drawPlayers(ctx2,st2.players,st2.view,st2.pR,st2.colorA,st2.colorB,st2);
-      drawBalls(ctx2,st2.balls,null,st2.view,st2.pR);
+      drawBalls(ctx2,st2.balls,null,st2.view,st2.pR,st2.ballSize);
       return oc.toDataURL('image/jpeg',0.6);
     }catch(e){return null;}
   }
@@ -1555,6 +1514,7 @@ function TacticsBoard(){
       if(ghosts)parts.push(ghosts+' ghost'+(ghosts>1?'s':'')+' added');
     }
     if(data.balls&&data.balls.length)parts.push(data.balls.length+' ball'+(data.balls.length>1?'s':''));
+    if(data.ballSize&&data.ballSize!==st.ballSize)parts.push('ball size: '+data.ballSize);
     if(data.arrows&&data.arrows.length)parts.push(data.arrows.length+' arrow'+(data.arrows.length>1?'s':''));
     if(data.phases&&data.phases.length)parts.push(data.phases.length+' step'+(data.phases.length>1?'s':''));
     return parts.length?parts.join(', '):'no changes detected';

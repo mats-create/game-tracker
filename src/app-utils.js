@@ -13,6 +13,7 @@ const W=680,H=440;
 // ─── SIZE LOOKUP TABLES ───────────────────────────────────────────────────────
 const PSIZES={xs:7,s:10,m:14,l:19};
 const MSIZES={xs:5,s:7,m:10,l:14};
+const BSIZES={xs:5,s:8,m:11,l:15};
 const AHEAD={s:5,m:7,l:9,none:0};
 
 // ─── CSS DESIGN TOKENS ────────────────────────────────────────────────────────
@@ -309,7 +310,7 @@ function markerHalf(st,extra){
 // Single source of truth for all shared sizing formulas.
 // Used by both canvas draw code (app-core.js) and SVG/PDF export (app-export.js).
 // Change a formula here and it applies consistently to canvas + SVG + PDF.
-function ballRadius(r)       { return Math.max(6,Math.round(r*0.65)); }
+function ballRadius(r,size)  { return BSIZES[size||'m']||Math.max(6,Math.round(r*0.65)); }
 function playerNumFS(r)      { return Math.max(9,Math.round(r*1.1)); }
 function markerLabelFS(half) { return Math.max(7,Math.round(half*1.3)); }
 function legendDotNumFS(dr)  { return Math.max(8,Math.round(dr*1.2)); }

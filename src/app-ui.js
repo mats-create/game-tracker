@@ -404,6 +404,14 @@ function Collapsible({label,badge,children,defaultOpen,accentColor}){
             <button onClick={()=>{const bl=st.balls[st.selectedBallIdx];if(bl){bl.score=!bl.score;redraw();}}} style={{fontSize:11,padding:'3px 8px',height:26,cursor:'pointer',borderRadius:6,border:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?C.activeBg:'transparent',color:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?C.activeText:C.textMid}}>
               {st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?'Score: on':'Score'}
             </button>
+            <div style={{display:'flex',alignItems:'center',gap:3}}>
+              {['xs','s','m','l'].map(function(sz){return(
+                <button key={sz} onClick={()=>{S.current.ballSize=sz;redraw();}}
+                  style={{fontSize:10,width:22,height:22,cursor:'pointer',borderRadius:5,border:(st.ballSize||'m')===sz?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:(st.ballSize||'m')===sz?C.activeBg:'transparent',color:(st.ballSize||'m')===sz?C.activeText:C.textMuted,fontWeight:500,padding:0}}>
+                  {sz.toUpperCase()}
+                </button>
+              );})}
+            </div>
             <GhostBtn onClick={deleteSelected}>Delete</GhostBtn>
           </InfoBar>}
           {hasSelPM&&(()=>{
@@ -813,8 +821,14 @@ function Collapsible({label,badge,children,defaultOpen,accentColor}){
             <button onClick={()=>zoomStep(1.25,W/2,H/2)} style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:16,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
             <button onClick={()=>zoomStep(0.8,W/2,H/2)}  style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:16,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
             <button onClick={resetZoom} style={{height:28,padding:'0 8px',cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:11}}>Reset</button>
+            <div style={{width:1,height:20,background:'rgba(255,255,255,0.2)',margin:'0 2px'}}/>
+            <button onClick={()=>panStep(0,1)}  style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>↑</button>
+            <button onClick={()=>panStep(0,-1)} style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>↓</button>
+            <button onClick={()=>panStep(1,0)}  style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>←</button>
+            <button onClick={()=>panStep(-1,0)} style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>→</button>
+            <button onClick={resetPan} style={{height:28,padding:'0 8px',cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:11}}>Centre</button>
           </div>
-          <div style={{position:'absolute',bottom:13,right:10,fontSize:10,color:'rgba(255,255,255,0.5)',pointerEvents:'none'}}>Scroll to zoom · Space+drag to pan</div>
+          <div style={{position:'absolute',bottom:13,right:10,fontSize:10,color:'rgba(255,255,255,0.5)',pointerEvents:'none'}}>Space+drag to pan</div>
         </div>
 
         {/* Moves panel */}

@@ -129,8 +129,8 @@
     return out;
   }
 
-  function ballSVGLines(balls,r,ink){
-    const br=ballRadius(r);
+  function ballSVGLines(balls,r,ink,ballSize){
+    const br=ballRadius(r,ballSize);
     const sc=ink?'#1a1a2e':'#333',sw=ink?1.5:1.2;
     const out2=[];
     balls.forEach(bl=>{
@@ -139,6 +139,21 @@
         return;
       }
       out2.push(`<circle cx="${bl.x.toFixed(1)}" cy="${bl.y.toFixed(1)}" r="${br}" fill="white" stroke="${sc}" stroke-width="${sw}"/>`);
+      if(!bl.score){
+        // Pentagon panel pattern — matches canvas drawBalls
+        const pts=[];
+        for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2;pts.push([bl.x+Math.cos(a)*(br*0.38),bl.y+Math.sin(a)*(br*0.38)]);}
+        const poly=pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
+        out2.push(`<polygon points="${poly}" fill="#1a1a1a" stroke="${sc}" stroke-width="0.9"/>`);
+        for(let i=0;i<5;i++){
+          const a=i*Math.PI*2/5-Math.PI/2;
+          const ix=pts[i][0],iy=pts[i][1];
+          const ox=(bl.x+Math.cos(a)*br).toFixed(1),oy=(bl.y+Math.sin(a)*br).toFixed(1);
+          out2.push(`<line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${ox}" y2="${oy}" stroke="${sc}" stroke-width="0.9"/>`);
+          const a2=a+Math.PI*2/10,mx=(bl.x+Math.cos(a2)*(br*0.75)).toFixed(1),my=(bl.y+Math.sin(a2)*(br*0.75)).toFixed(1);
+          out2.push(`<line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${mx}" y2="${my}" stroke="${sc}" stroke-width="0.9"/>`);
+        }
+      }
       if(bl.score){
         const spikes=8,gap=2,spikeLen=br*0.55;
         const inner=br+2.5+gap;
@@ -540,7 +555,7 @@
       svgLines.push('<circle cx="'+bl.x.toFixed(1)+'" cy="'+bl.y.toFixed(1)+'" r="'+br2+'" fill="none" stroke="#888888" stroke-width="1.5" stroke-dasharray="4 3"/>');
     });
     // Solid balls only
-    ballSVGLines(balls.filter(function(bl){return !bl.ghost;}),r,false).forEach(function(l){svgLines.push(l);});
+    ballSVGLines(balls.filter(function(bl){return !bl.ghost;}),r,false,st.ballSize).forEach(function(l){svgLines.push(l);});
     legendSVGLines(st,cA,cB,ph,phaseColor).forEach(function(l){svgLines.push(l);});
     // Watermark: bottom-right inside pitch area
     if(wmText){
@@ -634,7 +649,7 @@
       symbolSVGLines(st.symbols).forEach(l=>out.push('  '+l));
       markerSVGLines(ph,phaseColor,st.markerSize,r).forEach(l=>out.push('  '+l));
       playerSVGLines(pl,cA,cB,st,false,false).forEach(l=>out.push('  '+l));
-      ballSVGLines(balls,r,false).forEach(l=>out.push('  '+l));
+      ballSVGLines(balls,r,false,st.ballSize).forEach(l=>out.push('  '+l));
       out.push(`</g>`);
       legendSVGLines(st,cA,cB,ph,phaseColor).forEach(l=>out.push(l));
       // ── N&N brand footer — thin rule + text, minimal ink ──
@@ -675,7 +690,7 @@
     playerSVGLines(pl,cA,cB,st,false,false).forEach(l=>out2.push('  '+l));
     out2.push(`</g>`);
     out2.push(`<g inkscape:label="Balls" inkscape:groupmode="layer" id="layer-balls">`);
-    ballSVGLines(balls,r,false).forEach(l=>out2.push('  '+l));
+    ballSVGLines(balls,r,false,st.ballSize).forEach(l=>out2.push('  '+l));
     out2.push(`</g>`);
     out2.push(`</g>`);
     out2.push(`<g inkscape:label="Legends" inkscape:groupmode="layer" id="layer-legends">`);

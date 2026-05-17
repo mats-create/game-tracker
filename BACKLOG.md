@@ -274,12 +274,106 @@ As a developer maintaining the Game Tracker, I want shared sizing logic defined 
 **Notes:**  
 This is the most impactful remaining refactor -- it directly prevents the class of bug that caused a 6-location fix in the past. Do not modify any rendering code without completing this first.
 
+
+---
+
+### GT-030 · Replace wheel-based zoom/pan with explicit pan arrow buttons
+
+**Priority:** P1  
+**Confidence:** HIGH -- root cause confirmed, approach agreed  
+**Status:** [ ]
+
+**Background:**  
+The wheel/trackpad interception code (section `// ─── WHEEL` in `app-core.js`) has broken repeatedly across OS, browser, and PWA contexts. The fundamental problem is that vertical two-finger scroll sends the same event as browser page scroll, making reliable interception impossible. The existing explicit zoom buttons (±, reset) have never broken. The same pattern should be applied to pan.
+
+**User story:**  
+As a user on any device, I want reliable pitch zoom and pan controls so that the pitch never gets stuck in a broken state due to browser/OS scroll interception.
+
+**What to build:**
+- Remove the entire `// ─── WHEEL` useEffect (lines ~858–888 in app-core.js)
+- Keep all existing explicit zoom controls (zoomStep, resetZoom, ± buttons) unchanged
+- Add four pan arrow buttons (↑ ↓ ← →) to the pitch controls UI
+- Add a reset pan button alongside reset zoom
+- Each pan button click moves the pitch by a fixed step (e.g. 60px at current scale) via existing `clampVP()` and `vp.current.ox/oy`
+- Keep spacebar+drag and middle-click drag pan (these are opt-in gestures, not intercepted scroll)
+
+**Acceptance criteria:**
+- [ ] Wheel section removed from app-core.js
+- [ ] Four pan arrow buttons added to pitch controls in app-ui.js
+- [ ] Reset pan button added
+- [ ] Pan buttons move pitch correctly at all zoom levels
+- [ ] Zoom ± and reset zoom still work identically
+- [ ] No browser scroll interception -- two-finger scroll behaves as normal browser scroll
+
+**Files needed:** `app-core.js`, `app-ui.js`
+
+---
+
+### GT-031 · Reproduce football pentagon pattern in ball SVG/PDF export
+
+**Priority:** P2  
+**Confidence:** HIGH -- gap confirmed, canvas geometry maps directly to SVG  
+**Status:** [ ]
+
+**Background:**  
+The canvas `drawBalls()` function draws a white circle with a pentagon pattern (5-point star with radiating lines) giving a football appearance. `ballSVGLines()` in `app-export.js` outputs only a plain white circle with a stroke. The SVG/PDF export therefore looks nothing like the canvas version for normal (non-ghost, non-score) balls.
+
+**User story:**  
+As a user exporting a board, I want the ball in the SVG and PDF to look like the ball on the pitch canvas so that the export is a faithful representation of what I designed.
+
+**What to build:**  
+Reproduce the pentagon pattern in `ballSVGLines()` using SVG `<polygon>` and `<line>` elements. The canvas version uses pure path geometry so it maps directly. Ghost balls (dashed circle) and score balls (spikes) are already correct -- only the normal solid ball needs updating.
+
+**Acceptance criteria:**
+- [ ] Normal solid ball in colour SVG export shows pentagon/football pattern
+- [ ] Normal solid ball in embroidery SVG export shows pentagon/football pattern
+- [ ] Normal solid ball in PDF export shows pentagon/football pattern
+- [ ] Ghost ball (dashed circle) unchanged
+- [ ] Score ball (spikes) unchanged
+- [ ] Pattern is visually consistent with canvas rendering
+
+**Files needed:** `app-export.js`
+
+---
+
+### GT-032 · Add independent ball size control
+
+**Priority:** P2  
+**Confidence:** HIGH -- approach fully mapped, follows established pattern  
+**Status:** [ ]
+
+**Background:**  
+Ball size is currently derived from player size (`ballRadius(pR)`), making it impossible to adjust independently. Players and move markers both have XS/S/M/L size controls. The ball has none.
+
+**User story:**  
+As a user, I want to resize the ball independently of player size so that I can control how prominent the ball appears on the pitch, matching the resize options available for players and move markers.
+
+**What to build:**
+- Add `BSIZES = {xs:5, s:8, m:11, l:15}` to `app-utils.js`
+- Add `ballSize:'m'` to board default state (3 places in `app-core.js`)
+- Update `ballRadius()` helper to accept `size` key and use `BSIZES` lookup
+- Update `drawBalls()` to derive radius from `st.ballSize` rather than `pR`
+- Add XS/S/M/L size buttons to the ball panel in `app-ui.js`
+- Pass `ballSize` through to `ballSVGLines()` in `app-export.js`
+- Include `ballSize` in board serialisation/deserialisation and the AI diff summary
+
+**Acceptance criteria:**
+- [ ] XS/S/M/L buttons visible in ball panel
+- [ ] Changing size updates ball on canvas immediately
+- [ ] Size persists when board is saved and reloaded from Firestore
+- [ ] SVG and PDF exports use the correct ball size
+- [ ] Default size (m) produces a ball visually similar to the current default
+- [ ] Both real and ghost ball variants respect the size setting
+
+**Files needed:** `app-core.js`, `app-ui.js`, `app-export.js`, `app-utils.js`
+
 ## Investigation queue
 
 Stories that cannot be planned or sized until files are uploaded and read.
 
 | ID | What needs investigating | Files needed |
 |----|--------------------------|--------------|
+| — | Nothing currently queued | — |
 
 
 ---
@@ -308,3 +402,4 @@ Stories that cannot be planned or sized until files are uploaded and read.
 | 2026-05-17 | GT-020 + GT-021 implemented -- delete consolidation and markerHalf() helper |
 | 2026-05-17 | GT-011 implemented -- UI primitives moved to app-ui.js |
 | 2026-05-17 | GT-022 implemented -- 5 sizing helpers in app-utils.js, 13 inline expressions replaced |
+| 2026-05-17 | GT-030, GT-031, GT-032 added -- pan controls, ball SVG pattern, ball size control |

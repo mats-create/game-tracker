@@ -240,8 +240,7 @@ Can be implemented in the same session as GT-020 -- both touch `app-core.js` onl
 
 **Priority:** P2  
 **Confidence:** MEDIUM -- functions identified, call sites need verification across both app-core.js and app-export.js  
-**Status:** [ ]  
-**NEEDS INVESTIGATION:** Upload `app-core.js`, `app-export.js`, and `app-utils.js` to map all call sites
+**Status:** [x] Done -- 2026-05-17
 
 **Background:**  
 Identified in a previous session (Game Tracker - Object Enhancements, 16 May). A sizing bug was fixed in `app-core.js` but missed in `app-export.js` because both files contained independent copies of the same sizing logic. The fix had to be applied in 6 separate places.
@@ -259,13 +258,20 @@ These should be defined once in `app-utils.js` and called from both `app-core.js
 **User story:**  
 As a developer maintaining the Game Tracker, I want shared sizing logic defined in one place so that future changes to rendering sizes only need to be made once and apply consistently to both canvas and SVG/PDF output.
 
+**Helpers added to app-utils.js:**
+- `ballRadius(r)` -- `Math.max(6,Math.round(r*0.65))` -- core×1, export×2
+- `playerNumFS(r)` -- `Math.max(9,Math.round(r*1.1))` -- core×2, export×3
+- `markerLabelFS(half)` -- `Math.max(7,Math.round(half*1.3))` -- core×1, export×1
+- `legendDotNumFS(dr)` -- `Math.max(8,Math.round(dr*1.2))` -- core×2, export×2
+- `stepMarkerFS(br)` -- `Math.max(5,Math.round(br*0.9))` -- core×2, export×0
+
 **Acceptance criteria:**
-- [ ] Call sites mapped in both `app-core.js` and `app-export.js` before any change
-- [ ] Three helper functions added to `app-utils.js`
-- [ ] All inline sizing expressions in `app-core.js` replaced with helper calls
-- [ ] All inline sizing expressions in `app-export.js` replaced with helper calls
-- [ ] Canvas rendering and SVG/PDF export produce identical sizes to before
-- [ ] No inline `Math.max(9, Math.round(r * 0.85))` style expressions remain for these three cases
+- [x] All 11 call sites mapped across both files before any change
+- [x] Five helper functions added to `app-utils.js`
+- [x] All inline sizing expressions replaced in `app-core.js` (7 sites)
+- [x] All inline sizing expressions replaced in `app-export.js` (6 sites)
+- [x] No old `Math.max(...Math.round(` sizing expressions remain -- verified
+- [ ] Canvas rendering and SVG/PDF export produce identical sizes -- verify after upload
 
 **Notes:**  
 This is the most impactful remaining refactor -- it directly prevents the class of bug that caused a 6-location fix in the past. Do not modify any rendering code without completing this first.
@@ -288,6 +294,7 @@ Stories that cannot be planned or sized until files are uploaded and read.
 - **GT-020** · Consolidate redundant delete functions -- 2026-05-17
 - **GT-021** · Extract marker half-size into markerHalf() helper -- 2026-05-17
 - **GT-011** · Move UI primitives to app-ui.js -- 2026-05-17
+- **GT-022** · Shared rendering size helpers extracted to app-utils.js -- 2026-05-17
 
 ---
 
@@ -301,4 +308,4 @@ Stories that cannot be planned or sized until files are uploaded and read.
 | 2026-05-17 | GT-003 implemented -- app-core.js reduced from 111KB to 83KB |
 | 2026-05-17 | GT-020 + GT-021 implemented -- delete consolidation and markerHalf() helper |
 | 2026-05-17 | GT-011 implemented -- UI primitives moved to app-ui.js |
-| 2026-05-17 | GT-022 added -- shared rendering size helpers (previously noted in BRIEF.md) |
+| 2026-05-17 | GT-022 implemented -- 5 sizing helpers in app-utils.js, 13 inline expressions replaced |

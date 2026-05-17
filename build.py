@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 """
-build.py — assembles index.html from src/ files.
+build.py -- assembles index.html from src/ files.
 
 Usage:
     python3 build.py           # build once
     python3 build.py --watch   # rebuild on every save (needs: pip install watchdog)
+
+Build order:
+    src/shell.html      HTML shell with <!-- BABEL_CONTENT_PLACEHOLDER -->
+    src/app-core.js     Constants, canvas, TacticsBoard body
+    src/app-logos.js    Base64 logo constants used by exportPDF
+    src/app-export.js   SVG helpers, exportPDF, exportSVG
+    src/app-ui.js       PlayerPanel, JSX render tree, root.render
 """
 
 import os
@@ -13,12 +20,13 @@ import sys
 SRC_DIR = "src"
 OUTPUT = "index.html"
 SHELL = os.path.join(SRC_DIR, "shell.html")
-PARTS = ["app-core.js", "app-export.js", "app-ui.js"]
+PARTS = ["app-core.js", "app-logos.js", "app-export.js", "app-ui.js"]
 PLACEHOLDER = "<!-- BABEL_CONTENT_PLACEHOLDER -->"
 
-# Sanity checks — things that must be present in each file
+# Sanity checks -- things that must be present in each file
 REQUIRED = {
     "app-core.js":   ["useState", "function TacticsBoard"],
+    "app-logos.js":  ["NN_LOGO_REV", "NN_LOGO_LINEN"],
     "app-export.js": ["function pitchSVGLines", "function exportPDF"],
     "app-ui.js":     ["function PlayerPanel", "root.render"],
 }
@@ -40,7 +48,7 @@ def build():
     for name in PARTS:
         path = os.path.join(SRC_DIR, name)
         if not os.path.exists(path):
-            _fail(f"{path} not found. Have you run split_clean.py yet?")
+            _fail(f"{path} not found.")
 
         with open(path, encoding="utf-8") as f:
             content = f.read()
@@ -49,11 +57,11 @@ def build():
             if required_string not in content:
                 _fail(
                     f"{path} is missing expected content: {required_string!r}\n"
-                    "The file may be corrupted or the split went wrong."
+                    "The file may be corrupted."
                 )
 
         js_parts.append(
-            f"// ── {name} {'─' * max(0, 60 - len(name))}\n{content}"
+            f"// -- {name} {'─' * max(0, 60 - len(name))}\n{content}"
         )
 
     # Assemble

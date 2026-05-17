@@ -358,6 +358,13 @@ function svgWrap(text,maxChars){
   if(cur)lines.push(cur);return lines;
 }
 
+// ─── MARKER SIZE HELPER ──────────────────────────────────────────────────────
+// Returns the half-size of a phase marker in pixels.
+// extra: additional pixels to add (e.g. 5 for selection outline padding)
+function markerHalf(st,extra){
+  return(MSIZES[st.markerSize||'m']||Math.round(st.pR*1.4))+(extra||0);
+}
+
 
 // -- app-core.js ─────────────────────────────────────────────────
 // app-core.js -- UI primitives, TacticsBoard component body
@@ -570,7 +577,7 @@ function TacticsBoard(){
     for(let pi=st.phases.length-1;pi>=0;pi--){
       const markers=st.phases[pi].markers||[];
       for(let mi=markers.length-1;mi>=0;mi--){
-        const m=markers[mi],half=MSIZES[st.markerSize||'m']||Math.round(st.pR*1.4);
+        const m=markers[mi],half=markerHalf(st);
         if(Math.abs(pos.x-m.x)<=half&&Math.abs(pos.y-m.y)<=half)return{phaseIdx:pi,markerIdx:mi};
       }
     }
@@ -925,7 +932,7 @@ function TacticsBoard(){
   function drawPhaseMarkers(ctx,ph,phaseColor,selPM,st){
     ph.forEach((p,pi)=>(p.markers||[]).forEach((m,mi)=>{
       const isSel=selPM&&selPM.phaseIdx===pi&&selPM.markerIdx===mi;
-      const half=MSIZES[st.markerSize||'m']||Math.round(st.pR*1.4);
+      const half=markerHalf(st);
       drawSquareMarker(ctx,m.x,m.y,half,phaseColor,isSel?'#fff':'rgba(255,255,255,0.75)',isSel?2.5:1.5);
       if(isSel){ctx.setLineDash([4,3]);drawSquareMarker(ctx,m.x,m.y,half+4,null,'rgba(255,255,255,0.5)',1.5);ctx.setLineDash([]);}
       const mfs=Math.max(7,Math.round(half*1.3));
@@ -1244,7 +1251,7 @@ function TacticsBoard(){
       } else if(item.type==='marker'){
         const ph=st.phases[item.phaseIdx];
         if(ph&&ph.markers&&ph.markers[item.markerIdx]){
-          const m=ph.markers[item.markerIdx];const half=(MSIZES[st.markerSize||'m']||10)+5;
+          const m=ph.markers[item.markerIdx];const half=markerHalf(st,5);
           ctx.strokeRect(m.x-half,m.y-half,half*2,half*2);
         }
       }
@@ -1684,11 +1691,8 @@ function TacticsBoard(){
   }
 
   // Convenience wrappers — now go through confirmation
-  function deleteSelectedArrow(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
-  function deleteSelectedBall(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
-  function deleteSelectedSymbol(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
-  function deleteSelectedPhaseMarker(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
-  function deleteSelectedItems(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
+  // Single delete entry point -- replaces deleteSelectedArrow/Ball/Symbol/PhaseMarker/Items
+  function deleteSelected(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
   function setMarkerEventType(type){const st=S.current;if(!st.selectedPhaseMarker)return;const{phaseIdx,markerIdx}=st.selectedPhaseMarker;if(st.phases[phaseIdx]&&st.phases[phaseIdx].markers[markerIdx])st.phases[phaseIdx].markers[markerIdx].eventType=type;redraw();}
   function toggleBallGhost(){const st=S.current;if(st.selectedBallIdx===null)return;const bl=st.balls[st.selectedBallIdx];if(bl)bl.ghost=!bl.ghost;redraw();}
   function undoArrow(){S.current.arrows=S.current.arrows.slice(0,-1);S.current.selectedArrowIdx=null;redraw();}
@@ -3242,7 +3246,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
                   background:headOn?C.activeBg:'transparent',color:headOn?C.activeText:C.textMid}}>
                 {headOn?'Head: on':'Head: off'}
               </button>
-              <GhostBtn onClick={deleteSelectedArrow}>Delete</GhostBtn>
+              <GhostBtn onClick={deleteSelected}>Delete</GhostBtn>
             </InfoBar>;
           })()}
           {hasSelBall&&<InfoBar icon="⚽" text={`${hasSelBallGhost?'Ghost ball':'Ball'} selected.`}>
@@ -3252,7 +3256,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
             <button onClick={()=>{const bl=st.balls[st.selectedBallIdx];if(bl){bl.score=!bl.score;redraw();}}} style={{fontSize:11,padding:'3px 8px',height:26,cursor:'pointer',borderRadius:6,border:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?C.activeBg:'transparent',color:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?C.activeText:C.textMid}}>
               {st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?'Score: on':'Score'}
             </button>
-            <GhostBtn onClick={deleteSelectedBall}>Delete</GhostBtn>
+            <GhostBtn onClick={deleteSelected}>Delete</GhostBtn>
           </InfoBar>}
           {hasSelPM&&(()=>{
             const spm=st.selectedPhaseMarker;
@@ -3260,7 +3264,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
                 <span style={{fontSize:14}}>①</span>
                 <span style={{fontSize:11,color:C.activeText,flex:1}}>Step marker selected — drag to move</span>
-                <GhostBtn onClick={deleteSelectedPhaseMarker}>Delete</GhostBtn>
+                <GhostBtn onClick={deleteSelected}>Delete</GhostBtn>
               </div>
 
             </div>;
@@ -3272,7 +3276,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
                 <span style={{fontSize:14}}>◈</span>
                 <span style={{fontSize:11,color:C.activeText,flex:1}}>Symbol selected — drag to move</span>
-                <GhostBtn onClick={deleteSelectedSymbol}>Delete</GhostBtn>
+                <GhostBtn onClick={deleteSelected}>Delete</GhostBtn>
               </div>
               <div style={{fontSize:10,color:C.textMuted,marginBottom:4,fontWeight:500}}>TYPE</div>
               <div style={{display:'flex',gap:3,flexWrap:'wrap',marginBottom:8}}>
@@ -3370,7 +3374,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
             return React.createElement('div',{style:{marginTop:4,padding:'6px 8px',background:C.blueLight,borderRadius:8,border:'1px solid '+C.blueBorder}},
               React.createElement('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:4}},
                 React.createElement('span',{style:{fontSize:11,color:C.activeText,flex:1}},'Symbol selected — drag to move'),
-                React.createElement('button',{onClick:deleteSelectedSymbol,
+                React.createElement('button',{onClick:deleteSelected,
                   style:{fontSize:11,padding:'2px 7px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.activeBorder,background:C.activeBg,color:C.activeText}},'Delete')
               ),
               React.createElement('div',{style:{fontSize:10,color:C.textMuted,marginBottom:4}},'Change type:'),

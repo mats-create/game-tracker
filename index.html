@@ -73,6 +73,7 @@ const W=680,H=440;
 // ─── SIZE LOOKUP TABLES ───────────────────────────────────────────────────────
 const PSIZES={xs:7,s:10,m:14,l:19};
 const MSIZES={xs:5,s:7,m:10,l:14};
+const BSIZES={xs:5,s:8,m:11,l:15};
 const AHEAD={s:5,m:7,l:9,none:0};
 
 // ─── CSS DESIGN TOKENS ────────────────────────────────────────────────────────
@@ -365,52 +366,22 @@ function markerHalf(st,extra){
   return(MSIZES[st.markerSize||'m']||Math.round(st.pR*1.4))+(extra||0);
 }
 
+// ─── RENDERING SIZE HELPERS ───────────────────────────────────────────────────
+// Single source of truth for all shared sizing formulas.
+// Used by both canvas draw code (app-core.js) and SVG/PDF export (app-export.js).
+// Change a formula here and it applies consistently to canvas + SVG + PDF.
+function ballRadius(r,size)  { return BSIZES[size||'m']||Math.max(6,Math.round(r*0.65)); }
+function playerNumFS(r)      { return Math.max(9,Math.round(r*1.1)); }
+function markerLabelFS(half) { return Math.max(7,Math.round(half*1.3)); }
+function legendDotNumFS(dr)  { return Math.max(8,Math.round(dr*1.2)); }
+function stepMarkerFS(br)    { return Math.max(5,Math.round(br*0.9)); }
+
+
 
 // -- app-core.js ─────────────────────────────────────────────────
 // app-core.js -- UI primitives, TacticsBoard component body
 // Nutmeg&Needle Game Tracker -- edit this file, not index.html
 // Constants and pure utilities live in app-utils.js (loaded before this file).
-
-// ─── UI PRIMITIVES ────────────────────────────────────────────────────────────
-function Card({children,style}){return <div style={{background:C.card,border:`0.5px solid ${C.cardBorder}`,borderRadius:14,padding:'12px 14px',marginBottom:8,...style}}>{children}</div>;}
-function Hint({children,style}){return <div style={{fontSize:11,color:C.textMuted,lineHeight:1.55,marginTop:6,...style}}>{children}</div>;}
-function Row({children,style}){return <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center',...style}}>{children}</div>;}
-function ModeBtn({active,onClick,emoji,label,title}){
-  return <button onClick={onClick} title={title} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4,padding:'10px 12px',minWidth:72,height:64,cursor:'pointer',borderRadius:12,border:active?`2px solid ${C.activeBorder}`:`1.5px solid ${C.cardBorder}`,background:active?C.activeBg:'#FAFAF8',color:active?C.activeText:C.textMid,boxShadow:active?`0 0 0 3px rgba(204,51,0,0.12)`:'none'}}>
-    <span style={{fontSize:22,lineHeight:1}}>{emoji}</span>
-    <span style={{fontSize:10,fontWeight:active?600:400,letterSpacing:0.2}}>{label}</span>
-  </button>;
-}
-function ToggleBtn({active,onClick,children,title}){
-  return <button onClick={onClick} title={title} style={{fontSize:12,padding:'4px 10px',height:28,cursor:'pointer',borderRadius:7,border:active?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:active?C.activeBg:'transparent',color:active?C.activeText:C.textMid,fontWeight:active?500:400}}>{children}</button>;
-}
-function ActionBtn({onClick,children,disabled,danger}){
-  return <button onClick={onClick} disabled={disabled} style={{fontSize:12,padding:'6px 14px',height:30,cursor:disabled?'default':'pointer',borderRadius:8,border:'none',background:disabled?'#E5E5EA':danger?C.red:C.blue,color:disabled?C.textMuted:'#fff',fontWeight:500,opacity:disabled?0.6:1}}>{children}</button>;
-}
-function GhostBtn({onClick,children,disabled,active}){
-  return <button onClick={onClick} disabled={disabled} style={{fontSize:11,padding:'3px 9px',height:26,cursor:disabled?'default':'pointer',borderRadius:6,border:active?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:active?C.activeBg:'transparent',color:active?C.activeText:C.textMuted}}>{children}</button>;
-}
-function InfoBar({icon,text,children}){
-  return <div style={{marginTop:8,padding:'8px 12px',background:C.blueLight,borderRadius:10,border:`1px solid ${C.blueBorder}`,display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-    {icon&&<span style={{fontSize:16}}>{icon}</span>}
-    <span style={{fontSize:11,color:C.activeText,flex:1}}>{text}</span>
-    {children}
-  </div>;
-}
-function Collapsible({label,badge,children,defaultOpen,accentColor}){
-  const [open,setOpen]=useState(defaultOpen||false);
-  const bg=accentColor?accentColor.bg:C.card;
-  const border=accentColor?`1px solid ${accentColor.border}`:`0.5px solid ${C.cardBorder}`;
-  const labelColor=accentColor?accentColor.text:C.text;
-  return <div style={{marginBottom:6}}>
-    <button onClick={()=>setOpen(o=>!o)} style={{display:'flex',alignItems:'center',width:'100%',padding:'9px 12px',cursor:'pointer',background:bg,border,borderRadius:open?'12px 12px 0 0':12,fontSize:12,fontWeight:500,color:labelColor,textAlign:'left',gap:8}}>
-      <span style={{flex:1}}>{label}</span>
-      {badge!=null&&<span style={{fontSize:10,background:'#F0F0EB',borderRadius:10,padding:'1px 7px',color:C.textMuted}}>{badge}</span>}
-      <span style={{fontSize:11,color:accentColor?accentColor.text:C.textMuted}}>{open?'▲':'▼'}</span>
-    </button>
-    {open&&<div style={{background:bg,border,borderTop:'none',borderRadius:'0 0 12px 12px',padding:'12px 14px'}}>{children}</div>}
-  </div>;
-}
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 function TacticsBoard(){
@@ -427,11 +398,7 @@ function TacticsBoard(){
     edgeColorA:'#ffffff',edgeColorB:'#ffffff',
     teamNameA:'',teamNameB:'',
     arrowColor:'#F5F5F5',arrowStyle:'solid',arrowShape:'straight',arrowHeadSize:'m',
-    view:'full',pR:14,markerSize:'m',activePh:0,labelContrast:'outline',
-    legend:{x:10,y:10,scale:1,w:null,h:null,textColor:'#222',cols:2},
-    stepLegend:{x:10,y:60,scale:1,w:null,h:null,textColor:'#333'},
-    symbols:[],symbolColor:'#F5F5F5',symbolSize:'m',symbolType:'goal',
-    selectedArrowIdx:null,selectedBallIdx:null,selectedPhaseMarker:null,selectedSymbolIdx:null,selectedGhostId:null,showGrid:false,
+    view:'full',pR:14,markerSize:'m',ballSize:'m',activePh:0,labelContrast:'outline',
     multiSelection:[],
     mode:'move',
     cropRegion:null,cropSelected:false,
@@ -493,6 +460,8 @@ function TacticsBoard(){
     return{ox:Math.min(0,Math.max(minOx,ox)),oy:Math.min(0,Math.max(minOy,oy))};
   }
   function resetZoom(){vp.current={scale:1,ox:0,oy:0,panning:false,panStart:null};redraw();}
+  function resetPan(){const v=vp.current;const c=clampVP(v.scale,0,0);vp.current={...v,ox:c.ox,oy:c.oy};redraw();}
+  function panStep(dx,dy){const v=vp.current;const step=60/v.scale;const c=clampVP(v.scale,v.ox+dx*step,v.oy+dy*step);vp.current={...v,ox:c.ox,oy:c.oy};redraw();}
   function zoomStep(delta,cx,cy){
     const v=vp.current,newScale=Math.max(1,Math.min(4,v.scale*delta)),ratio=newScale/v.scale;
     const c=clampVP(newScale,cx-(cx-v.ox)*ratio,cy-(cy-v.oy)*ratio);
@@ -935,7 +904,7 @@ function TacticsBoard(){
       const half=markerHalf(st);
       drawSquareMarker(ctx,m.x,m.y,half,phaseColor,isSel?'#fff':'rgba(255,255,255,0.75)',isSel?2.5:1.5);
       if(isSel){ctx.setLineDash([4,3]);drawSquareMarker(ctx,m.x,m.y,half+4,null,'rgba(255,255,255,0.5)',1.5);ctx.setLineDash([]);}
-      const mfs=Math.max(7,Math.round(half*1.3));
+      const mfs=markerLabelFS(half);
       ctx.fillStyle='#fff';ctx.font=`bold ${mfs}px Inter,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillText(phaseLabel(p.label),m.x,m.y+Math.round(mfs*0.06));
     }));
@@ -959,9 +928,9 @@ function TacticsBoard(){
         const ec=(p.team==='A'?st.edgeColorA:st.edgeColorB)||'rgba(255,255,255,0.85)';
         ctx.strokeStyle=ec;ctx.lineWidth=ew;ctx.stroke();
       }
-      const contrast=st.labelContrast||'normal',fs=Math.max(9,Math.round(r*1.1));
+      const contrast=st.labelContrast||'normal',fs=playerNumFS(r);
       ctx.font=`bold ${fs}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-      if(isGhost){ctx.font=`bold ${Math.max(9,Math.round(r*1.1))}px Inter,sans-serif`;ctx.strokeStyle='rgba(0,0,0,0.82)';ctx.lineWidth=3;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle=col;ctx.fillText(p.num,p.x,p.y);}
+      if(isGhost){ctx.font=`bold ${playerNumFS(r)}px Inter,sans-serif`;ctx.strokeStyle='rgba(0,0,0,0.82)';ctx.lineWidth=3;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle=col;ctx.fillText(p.num,p.x,p.y);}
       else if(contrast==='outline'){ctx.strokeStyle='rgba(0,0,0,0.88)';ctx.lineWidth=3;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle='#fff';ctx.fillText(p.num,p.x,p.y);}
       else if(contrast==='dark'){ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=2;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle='#111';ctx.fillText(p.num,p.x,p.y);}
       else{ctx.fillStyle='#fff';ctx.fillText(p.num,p.x,p.y);}
@@ -978,8 +947,8 @@ function TacticsBoard(){
   }
 
   // ─── DRAW: BALLS ──────────────────────────────────────────────────────────
-  function drawBalls(ctx,balls,selB,v,pR){
-    const br=Math.max(6,Math.round(pR*0.65));
+  function drawBalls(ctx,balls,selB,v,pR,ballSize){
+    const br=ballRadius(pR,ballSize);
     function drawOne(bx,by,br2,sel,ghost,score){
       ctx.save();
       if(ghost){
@@ -1059,7 +1028,7 @@ function TacticsBoard(){
           ctx.beginPath();ctx.arc(cx+dr,ry+dr,dr,0,Math.PI*2);ctx.fillStyle=jerseyCol;ctx.fill();
           ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1;ctx.stroke();
           // Jersey number inside dot
-          ctx.font=`bold ${Math.max(8,Math.round(dr*1.2))}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.font=`bold ${legendDotNumFS(dr)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
           ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=1.5;ctx.lineJoin='round';ctx.strokeText(p.num,cx+dr,ry+dr);
           ctx.fillStyle='#fff';ctx.fillText(p.num,cx+dr,ry+dr);
           // Player name
@@ -1089,7 +1058,7 @@ function TacticsBoard(){
           const ry=ly+pad+Math.round(14*sc)+pad/2+i*lineH,dr=dotS/2;
           ctx.beginPath();ctx.arc(lx+pad+dr,ry+dr,dr,0,Math.PI*2);ctx.fillStyle=p.jerseyCol;ctx.fill();
           ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1;ctx.stroke();
-          ctx.font=`bold ${Math.max(8,Math.round(dr*1.2))}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.font=`bold ${legendDotNumFS(dr)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
           ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=1.5;ctx.lineJoin='round';ctx.strokeText(p.num,lx+pad+dr,ry+dr);
           ctx.fillStyle='#fff';ctx.fillText(p.num,lx+pad+dr,ry+dr);
           ctx.fillStyle=textCol;ctx.font=`${nameFs}px sans-serif`;ctx.textAlign='left';ctx.textBaseline='middle';
@@ -1129,8 +1098,8 @@ function TacticsBoard(){
         const ry=rowY,bx=lx+pad+br,textX=lx+pad+br*2+Math.round(6*sc);
         const lineMid=ry+stepLineH/2;
         drawSquareMarker(ctx,bx,lineMid,br,phaseColor,'rgba(255,255,255,0.4)',1);
-        ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(5,Math.round(br*0.9))}px Inter,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText(phaseLabel(p.label),bx,lineMid+Math.round(Math.max(5,Math.round(br*0.9))*0.06));
+        ctx.fillStyle='#fff';ctx.font=`bold ${stepMarkerFS(br)}px Inter,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(phaseLabel(p.label),bx,lineMid+Math.round(stepMarkerFS(br)*0.06));
         ctx.fillStyle=textCol;ctx.font=`${nameFs}px sans-serif`;ctx.textAlign='left';ctx.textBaseline='middle';
         const note=p.note&&p.note.trim()?p.note:'—';
         const noteMaxW=boxW-pad*2-br*2-Math.round(5*sc);
@@ -1234,7 +1203,7 @@ function TacticsBoard(){
     ctx.setTransform(scale,0,0,scale,ox,oy);
     drawPhaseMarkers(ctx,ph,phaseColor,selPM,st);
     drawPlayers(ctx,pl,v,r,cA,cB,st);
-    drawBalls(ctx,balls,selB,v,r);
+    drawBalls(ctx,balls,selB,v,r,st.ballSize);
     drawSymbols(ctx,st.symbols,st.selectedSymbolIdx);
     // Draw multi-select outlines
     (st.multiSelection||[]).forEach(function(item){
@@ -1265,39 +1234,7 @@ function TacticsBoard(){
   useEffect(()=>{draw();},[tick]);
   useEffect(()=>{if(fbAuthReady&&fbUser)draw();},[fbAuthReady]);
 
-  // ─── WHEEL: pinch/ctrl+scroll zooms, two-finger scroll pans ──────────────
-  useEffect(()=>{
-    const canvas=canvasRef.current;if(!canvas)return;
-    const fn=function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      const rect=canvas.getBoundingClientRect();
-      const mult=e.deltaMode===1?20:e.deltaMode===2?300:1;
-      if(e.ctrlKey){
-        // Pinch-to-zoom (macOS trackpad sends ctrlKey:true)
-        zoomStep(e.deltaY<0?1.08:1/1.08,(e.clientX-rect.left)*W/rect.width,(e.clientY-rect.top)*H/rect.height);
-      } else if(e.deltaY!==0&&e.deltaX===0){
-        // Two-finger vertical scroll → zoom at cursor position
-        zoomStep(e.deltaY<0?1.08:1/1.08,(e.clientX-rect.left)*W/rect.width,(e.clientY-rect.top)*H/rect.height);
-      } else if(e.deltaX!==0){
-        // Two-finger horizontal scroll → pan (only meaningful when zoomed in)
-        const sc=vp.current.scale;
-        const dx=(e.deltaX*mult)/sc;
-        const c=clampVP(sc,vp.current.ox-dx,vp.current.oy);
-        vp.current.ox=c.ox;draw();
-      }
-    };
-    // Block all wheel events at document level when over canvas (fixes standalone PWA scroll interception)
-    const docBlock=function(e){
-      if(e.target===canvas||canvas.contains(e.target)){e.preventDefault();}
-    };
-    canvas.addEventListener('wheel',fn,{passive:false,capture:true});
-    document.addEventListener('wheel',docBlock,{passive:false,capture:true});
-    return function(){
-      canvas.removeEventListener('wheel',fn,{capture:true});
-      document.removeEventListener('wheel',docBlock,{capture:true});
-    };
-  },[fbAuthReady]);
+
 
   // ─── ESCAPE KEY ───────────────────────────────────────────────────────────
   useEffect(()=>{
@@ -1666,13 +1603,7 @@ function TacticsBoard(){
           colorA:'#E24B4A',colorB:'#378ADD',edgeColorA:'#ffffff',edgeColorB:'#ffffff',
           teamNameA:'',teamNameB:'',
           arrowColor:'#F5F5F5',arrowStyle:'solid',arrowShape:'straight',arrowHeadSize:'m',
-          view:'full',pR:14,markerSize:'m',activePh:0,labelContrast:'outline',
-          legend:{x:10,y:10,scale:1,w:null,h:null,textColor:'#222',cols:2},
-          stepLegend:{x:10,y:60,scale:1,w:null,h:null,textColor:'#333'},
-          symbols:[],symbolColor:'#F5F5F5',symbolSize:'m',symbolType:'goal',
-          selectedArrowIdx:null,selectedBallIdx:null,selectedPhaseMarker:null,selectedSymbolIdx:null,
-          multiSelection:[],
-          mode:'move',cropRegion:null,cropSelected:false,exportFormat:'a4',exportOrientation:'landscape',
+          view:'full',pR:14,markerSize:'m',ballSize:'m',activePh:0,labelContrast:'outline',
           moment:{heading:'',what:'',event:'',at:'',when:'',who:''},
         };
         ar.current={drawing:false,aStart:null,cPath:[],cpCtrl:null,cpPhase:0,startAnchor:null};
@@ -1724,8 +1655,7 @@ function TacticsBoard(){
       colorA:'#E24B4A',colorB:'#378ADD',edgeColorA:'#ffffff',edgeColorB:'#ffffff',
       teamNameA:'',teamNameB:'',
       arrowColor:'#F5F5F5',arrowStyle:'solid',arrowShape:'straight',arrowHeadSize:'m',
-      view:'full',pR:14,markerSize:'m',activePh:0,labelContrast:'outline',
-      legend:{x:10,y:10,scale:1,w:null,h:null,textColor:'#222',cols:2},stepLegend:{x:10,y:60,scale:1,w:null,h:null,textColor:'#333'},
+      view:'full',pR:14,markerSize:'m',ballSize:'m',activePh:0,labelContrast:'outline',
       symbols:[],symbolColor:'#F5F5F5',symbolSize:'m',symbolType:'goal',
       selectedArrowIdx:null,selectedBallIdx:null,selectedPhaseMarker:null,selectedSymbolIdx:null,selectedGhostId:null,showGrid:false,showGrid:false,
       multiSelection:[],
@@ -1749,7 +1679,7 @@ function TacticsBoard(){
       colorA:st.colorA,colorB:st.colorB,edgeColorA:st.edgeColorA,edgeColorB:st.edgeColorB,
       teamNameA:st.teamNameA,teamNameB:st.teamNameB,
       arrowColor:st.arrowColor,arrowHeadSize:st.arrowHeadSize,arrowShape:st.arrowShape,arrowStyle:st.arrowStyle,
-      view:st.view,pR:st.pR,markerSize:st.markerSize,labelContrast:st.labelContrast,activePh:st.activePh,
+      view:st.view,pR:st.pR,markerSize:st.markerSize,ballSize:st.ballSize||'m',labelContrast:st.labelContrast,activePh:st.activePh,
       legend:st.legend,stepLegend:st.stepLegend,
       symbols:JSON.parse(JSON.stringify(st.symbols||[])),symbolColor:st.symbolColor,symbolSize:st.symbolSize,symbolType:st.symbolType,
       cropRegion:st.cropRegion,cropSelected:false,exportFormat:st.exportFormat,exportOrientation:st.exportOrientation,
@@ -1759,7 +1689,7 @@ function TacticsBoard(){
   function applyBoardState(data){
     const fields=['players','arrows','phases','phaseColor','balls','colorA','colorB',
       'edgeColorA','edgeColorB','teamNameA','teamNameB','arrowColor','arrowHeadSize',
-      'arrowShape','arrowStyle','view','pR','markerSize','labelContrast','activePh',
+      'arrowShape','arrowStyle','view','pR','markerSize','ballSize','labelContrast','activePh',
       'legend','stepLegend','cropRegion','cropSelected','exportFormat','exportOrientation','moment',
       'symbols','symbolColor','symbolSize','symbolType'];
     fields.forEach(function(f){if(data[f]!==undefined)S.current[f]=data[f];});
@@ -1848,7 +1778,7 @@ function TacticsBoard(){
       drawPitch(ctx2,st2.view);
       drawArrows(ctx2,st2.arrows,null,AHEAD[st2.arrowHeadSize]!==undefined?AHEAD[st2.arrowHeadSize]:7);
       drawPlayers(ctx2,st2.players,st2.view,st2.pR,st2.colorA,st2.colorB,st2);
-      drawBalls(ctx2,st2.balls,null,st2.view,st2.pR);
+      drawBalls(ctx2,st2.balls,null,st2.view,st2.pR,st2.ballSize);
       return oc.toDataURL('image/jpeg',0.6);
     }catch(e){return null;}
   }
@@ -1965,6 +1895,7 @@ function TacticsBoard(){
       if(ghosts)parts.push(ghosts+' ghost'+(ghosts>1?'s':'')+' added');
     }
     if(data.balls&&data.balls.length)parts.push(data.balls.length+' ball'+(data.balls.length>1?'s':''));
+    if(data.ballSize&&data.ballSize!==st.ballSize)parts.push('ball size: '+data.ballSize);
     if(data.arrows&&data.arrows.length)parts.push(data.arrows.length+' arrow'+(data.arrows.length>1?'s':''));
     if(data.phases&&data.phases.length)parts.push(data.phases.length+' step'+(data.phases.length>1?'s':''));
     return parts.length?parts.join(', '):'no changes detected';
@@ -2290,7 +2221,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
     ph.forEach(p=>(p.markers||[]).forEach(m=>{
       const half=MSIZES[markerSize||'m']||Math.round(r*1.4);
       out.push(`<rect x="${m.x-half}" y="${m.y-half}" width="${half*2}" height="${half*2}" rx="3" fill="${phaseColor}" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>`);
-      out.push(`<text x="${m.x}" y="${m.y}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="#fff" font-size="${Math.max(7,Math.round(half*1.3))}" font-weight="bold">${phaseLabel(p.label)}</text>`);
+      out.push(`<text x="${m.x}" y="${m.y}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="#fff" font-size="${markerLabelFS(half)}" font-weight="bold">${phaseLabel(p.label)}</text>`);
     }));
     return out;
   }
@@ -2304,13 +2235,13 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
       const col=p.team==='A'?cA:cB;0
       if(p.ghost){
         out.push(`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="rgba(255,255,255,0.1)" stroke="${col}" stroke-width="2.5" stroke-dasharray="4 4"/>`);
-        out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="${col}" font-size="${Math.max(9,Math.round(r*1.1))}" font-weight="bold">${p.num}</text>`);
+        out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="${col}" font-size="${playerNumFS(r)}" font-weight="bold">${p.num}</text>`);
         return;
       }
       const ec=(p.team==='A'?st.edgeColorA:st.edgeColorB)||'#fff';
       const ew=emb?(r<=10?5:r<=14?6:7):(r<=10?2:r<=14?2.5:3);
       out.push(`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${col}" stroke="${ec}" stroke-width="${ew}"/>`);
-      out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="#fff" font-size="${Math.max(9,Math.round(r*1.1))}" font-weight="bold">${p.num}</text>`);
+      out.push(`<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="#fff" font-size="${playerNumFS(r)}" font-weight="bold">${p.num}</text>`);
       if(p.name&&r>=14){
         const nc=ink?'#1a1a2e':'rgba(255,255,255,0.9)';
         out.push(`<text x="${p.x.toFixed(1)}" y="${(p.y+r+10).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${nc}" font-family="sans-serif" font-size="${Math.max(9,r-5)}">${p.name}</text>`);
@@ -2319,8 +2250,8 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
     return out;
   }
 
-  function ballSVGLines(balls,r,ink){
-    const br=Math.max(6,Math.round(r*0.65));
+  function ballSVGLines(balls,r,ink,ballSize){
+    const br=ballRadius(r,ballSize);
     const sc=ink?'#1a1a2e':'#333',sw=ink?1.5:1.2;
     const out2=[];
     balls.forEach(bl=>{
@@ -2329,6 +2260,21 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
         return;
       }
       out2.push(`<circle cx="${bl.x.toFixed(1)}" cy="${bl.y.toFixed(1)}" r="${br}" fill="white" stroke="${sc}" stroke-width="${sw}"/>`);
+      if(!bl.score){
+        // Pentagon panel pattern — matches canvas drawBalls
+        const pts=[];
+        for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2;pts.push([bl.x+Math.cos(a)*(br*0.38),bl.y+Math.sin(a)*(br*0.38)]);}
+        const poly=pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
+        out2.push(`<polygon points="${poly}" fill="#1a1a1a" stroke="${sc}" stroke-width="0.9"/>`);
+        for(let i=0;i<5;i++){
+          const a=i*Math.PI*2/5-Math.PI/2;
+          const ix=pts[i][0],iy=pts[i][1];
+          const ox=(bl.x+Math.cos(a)*br).toFixed(1),oy=(bl.y+Math.sin(a)*br).toFixed(1);
+          out2.push(`<line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${ox}" y2="${oy}" stroke="${sc}" stroke-width="0.9"/>`);
+          const a2=a+Math.PI*2/10,mx=(bl.x+Math.cos(a2)*(br*0.75)).toFixed(1),my=(bl.y+Math.sin(a2)*(br*0.75)).toFixed(1);
+          out2.push(`<line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${mx}" y2="${my}" stroke="${sc}" stroke-width="0.9"/>`);
+        }
+      }
       if(bl.score){
         const spikes=8,gap=2,spikeLen=br*0.55;
         const inner=br+2.5+gap;
@@ -2381,7 +2327,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
         list.forEach((p,i)=>{
           const ry=ly+pad+Math.round(14*sc)+pad/2+i*lineH,dr=dotS/2;
           out.push(`  <circle cx="${cx+dr}" cy="${ry+dr}" r="${dr}" fill="${jCol}" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>`);
-          out.push(`  <text x="${cx+dr}" y="${ry+dr}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" font-size="${Math.max(8,Math.round(dr*1.2))}" font-weight="bold" fill="#fff">${p.num}</text>`);
+          out.push(`  <text x="${cx+dr}" y="${ry+dr}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" font-size="${legendDotNumFS(dr)}" font-weight="bold" fill="#fff">${p.num}</text>`);
           const wrappedName=svgWrapText(p.name||'',colW2-dotS-10,nameFs);
           const nameX=cx+dotS+5,nameY=ry+dr;
           out.push(`  <text x="${nameX}" y="${nameY}" dominant-baseline="middle" font-family="sans-serif" font-size="${nameFs}" fill="${textCol}">${wrappedName.map(function(l,li){return'<tspan x="'+nameX+'" dy="'+(li===0?0:nameFs*1.2)+'">'+(l.text||'')+'</tspan>';}).join('')}</text>`);
@@ -2396,7 +2342,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
         combined.forEach((p,i)=>{
           const ry=ly+pad+Math.round(14*sc)+pad/2+i*lineH,dr=dotS/2;
           out.push(`  <circle cx="${lx+pad+dr}" cy="${ry+dr}" r="${dr}" fill="${p.jc}" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>`);
-          out.push(`  <text x="${lx+pad+dr}" y="${ry+dr}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" font-size="${Math.max(8,Math.round(dr*1.2))}" font-weight="bold" fill="#fff">${p.num}</text>`);
+          out.push(`  <text x="${lx+pad+dr}" y="${ry+dr}" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" font-size="${legendDotNumFS(dr)}" font-weight="bold" fill="#fff">${p.num}</text>`);
           const wrappedName1=svgWrapText(p.name||'',boxW-dotS-10,nameFs);
           const nameX1=lx+pad+dotS+5,nameY1=ry+dr;
           out.push(`  <text x="${nameX1}" y="${nameY1}" dominant-baseline="middle" font-family="sans-serif" font-size="${nameFs}" fill="${textCol}">${wrappedName1.map(function(l,li){return'<tspan x="'+nameX1+'" dy="'+(li===0?0:nameFs*1.2)+'">'+(l.text||'')+'</tspan>';}).join('')}</text>`);
@@ -2720,17 +2666,17 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
     pl.filter(function(p){return !p.hidden&&p.ghost;}).forEach(function(p){
       var col=p.team==='A'?cA:cB;
       svgLines.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-dasharray="4 3"/>');
-      svgLines.push('<text x="'+p.x.toFixed(1)+'" y="'+p.y.toFixed(1)+'" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="'+col+'" font-size="'+Math.max(9,Math.round(r*1.1))+'" font-weight="bold">'+p.num+'</text>');
+      svgLines.push('<text x="'+p.x.toFixed(1)+'" y="'+p.y.toFixed(1)+'" dy="0.36em" text-anchor="middle" font-family="Inter,sans-serif" fill="'+col+'" font-size="'+playerNumFS(r)+'" font-weight="bold">'+p.num+'</text>');
     });
     // Solid players only (no ghosts — they were already rendered above)
     playerSVGLines(pl.filter(function(p){return !p.ghost;}),cA,cB,st,false,false).forEach(function(l){svgLines.push(l);});
     // Ghost balls first — print-safe: transparent fill, dark dashed stroke
     balls.filter(function(bl){return bl.ghost;}).forEach(function(bl){
-      var br2=Math.max(6,Math.round(r*0.65));
+      var br2=ballRadius(r);
       svgLines.push('<circle cx="'+bl.x.toFixed(1)+'" cy="'+bl.y.toFixed(1)+'" r="'+br2+'" fill="none" stroke="#888888" stroke-width="1.5" stroke-dasharray="4 3"/>');
     });
     // Solid balls only
-    ballSVGLines(balls.filter(function(bl){return !bl.ghost;}),r,false).forEach(function(l){svgLines.push(l);});
+    ballSVGLines(balls.filter(function(bl){return !bl.ghost;}),r,false,st.ballSize).forEach(function(l){svgLines.push(l);});
     legendSVGLines(st,cA,cB,ph,phaseColor).forEach(function(l){svgLines.push(l);});
     // Watermark: bottom-right inside pitch area
     if(wmText){
@@ -2824,7 +2770,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
       symbolSVGLines(st.symbols).forEach(l=>out.push('  '+l));
       markerSVGLines(ph,phaseColor,st.markerSize,r).forEach(l=>out.push('  '+l));
       playerSVGLines(pl,cA,cB,st,false,false).forEach(l=>out.push('  '+l));
-      ballSVGLines(balls,r,false).forEach(l=>out.push('  '+l));
+      ballSVGLines(balls,r,false,st.ballSize).forEach(l=>out.push('  '+l));
       out.push(`</g>`);
       legendSVGLines(st,cA,cB,ph,phaseColor).forEach(l=>out.push(l));
       // ── N&N brand footer — thin rule + text, minimal ink ──
@@ -2865,7 +2811,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
     playerSVGLines(pl,cA,cB,st,false,false).forEach(l=>out2.push('  '+l));
     out2.push(`</g>`);
     out2.push(`<g inkscape:label="Balls" inkscape:groupmode="layer" id="layer-balls">`);
-    ballSVGLines(balls,r,false).forEach(l=>out2.push('  '+l));
+    ballSVGLines(balls,r,false,st.ballSize).forEach(l=>out2.push('  '+l));
     out2.push(`</g>`);
     out2.push(`</g>`);
     out2.push(`<g inkscape:label="Legends" inkscape:groupmode="layer" id="layer-legends">`);
@@ -2893,6 +2839,47 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
 // -- app-ui.js ───────────────────────────────────────────────────
 // app-ui.js — PlayerPanel sub-component, JSX render tree, root.render
 // Nutmeg&Needle Game Tracker — edit this file,  not index.html
+
+// ─── UI PRIMITIVES (moved from app-core.js) ─────────────────────────────────
+function Card({children,style}){return <div style={{background:C.card,border:`0.5px solid ${C.cardBorder}`,borderRadius:14,padding:'12px 14px',marginBottom:8,...style}}>{children}</div>;}
+function Hint({children,style}){return <div style={{fontSize:11,color:C.textMuted,lineHeight:1.55,marginTop:6,...style}}>{children}</div>;}
+function Row({children,style}){return <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center',...style}}>{children}</div>;}
+function ModeBtn({active,onClick,emoji,label,title}){
+  return <button onClick={onClick} title={title} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4,padding:'10px 12px',minWidth:72,height:64,cursor:'pointer',borderRadius:12,border:active?`2px solid ${C.activeBorder}`:`1.5px solid ${C.cardBorder}`,background:active?C.activeBg:'#FAFAF8',color:active?C.activeText:C.textMid,boxShadow:active?`0 0 0 3px rgba(204,51,0,0.12)`:'none'}}>
+    <span style={{fontSize:22,lineHeight:1}}>{emoji}</span>
+    <span style={{fontSize:10,fontWeight:active?600:400,letterSpacing:0.2}}>{label}</span>
+  </button>;
+}
+function ToggleBtn({active,onClick,children,title}){
+  return <button onClick={onClick} title={title} style={{fontSize:12,padding:'4px 10px',height:28,cursor:'pointer',borderRadius:7,border:active?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:active?C.activeBg:'transparent',color:active?C.activeText:C.textMid,fontWeight:active?500:400}}>{children}</button>;
+}
+function ActionBtn({onClick,children,disabled,danger}){
+  return <button onClick={onClick} disabled={disabled} style={{fontSize:12,padding:'6px 14px',height:30,cursor:disabled?'default':'pointer',borderRadius:8,border:'none',background:disabled?'#E5E5EA':danger?C.red:C.blue,color:disabled?C.textMuted:'#fff',fontWeight:500,opacity:disabled?0.6:1}}>{children}</button>;
+}
+function GhostBtn({onClick,children,disabled,active}){
+  return <button onClick={onClick} disabled={disabled} style={{fontSize:11,padding:'3px 9px',height:26,cursor:disabled?'default':'pointer',borderRadius:6,border:active?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:active?C.activeBg:'transparent',color:active?C.activeText:C.textMuted}}>{children}</button>;
+}
+function InfoBar({icon,text,children}){
+  return <div style={{marginTop:8,padding:'8px 12px',background:C.blueLight,borderRadius:10,border:`1px solid ${C.blueBorder}`,display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+    {icon&&<span style={{fontSize:16}}>{icon}</span>}
+    <span style={{fontSize:11,color:C.activeText,flex:1}}>{text}</span>
+    {children}
+  </div>;
+}
+function Collapsible({label,badge,children,defaultOpen,accentColor}){
+  const [open,setOpen]=useState(defaultOpen||false);
+  const bg=accentColor?accentColor.bg:C.card;
+  const border=accentColor?`1px solid ${accentColor.border}`:`0.5px solid ${C.cardBorder}`;
+  const labelColor=accentColor?accentColor.text:C.text;
+  return <div style={{marginBottom:6}}>
+    <button onClick={()=>setOpen(o=>!o)} style={{display:'flex',alignItems:'center',width:'100%',padding:'9px 12px',cursor:'pointer',background:bg,border,borderRadius:open?'12px 12px 0 0':12,fontSize:12,fontWeight:500,color:labelColor,textAlign:'left',gap:8}}>
+      <span style={{flex:1}}>{label}</span>
+      {badge!=null&&<span style={{fontSize:10,background:'#F0F0EB',borderRadius:10,padding:'1px 7px',color:C.textMuted}}>{badge}</span>}
+      <span style={{fontSize:11,color:accentColor?accentColor.text:C.textMuted}}>{open?'▲':'▼'}</span>
+    </button>
+    {open&&<div style={{background:bg,border,borderTop:'none',borderRadius:'0 0 12px 12px',padding:'12px 14px'}}>{children}</div>}
+  </div>;
+}
 
 // ─── PLAYER PANEL SUB-COMPONENT ───────────────────────────────────────────
   function PlayerPanel(){
@@ -3256,6 +3243,14 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
             <button onClick={()=>{const bl=st.balls[st.selectedBallIdx];if(bl){bl.score=!bl.score;redraw();}}} style={{fontSize:11,padding:'3px 8px',height:26,cursor:'pointer',borderRadius:6,border:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?C.activeBg:'transparent',color:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?C.activeText:C.textMid}}>
               {st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?'Score: on':'Score'}
             </button>
+            <div style={{display:'flex',alignItems:'center',gap:3}}>
+              {['xs','s','m','l'].map(function(sz){return(
+                <button key={sz} onClick={()=>{S.current.ballSize=sz;redraw();}}
+                  style={{fontSize:10,width:22,height:22,cursor:'pointer',borderRadius:5,border:(st.ballSize||'m')===sz?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:(st.ballSize||'m')===sz?C.activeBg:'transparent',color:(st.ballSize||'m')===sz?C.activeText:C.textMuted,fontWeight:500,padding:0}}>
+                  {sz.toUpperCase()}
+                </button>
+              );})}
+            </div>
             <GhostBtn onClick={deleteSelected}>Delete</GhostBtn>
           </InfoBar>}
           {hasSelPM&&(()=>{
@@ -3665,8 +3660,14 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
             <button onClick={()=>zoomStep(1.25,W/2,H/2)} style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:16,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
             <button onClick={()=>zoomStep(0.8,W/2,H/2)}  style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:16,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
             <button onClick={resetZoom} style={{height:28,padding:'0 8px',cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:11}}>Reset</button>
+            <div style={{width:1,height:20,background:'rgba(255,255,255,0.2)',margin:'0 2px'}}/>
+            <button onClick={()=>panStep(0,1)}  style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>↑</button>
+            <button onClick={()=>panStep(0,-1)} style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>↓</button>
+            <button onClick={()=>panStep(1,0)}  style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>←</button>
+            <button onClick={()=>panStep(-1,0)} style={{width:28,height:28,cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:14,lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}>→</button>
+            <button onClick={resetPan} style={{height:28,padding:'0 8px',cursor:'pointer',borderRadius:7,border:'none',background:'rgba(0,0,0,0.45)',color:'#fff',fontSize:11}}>Centre</button>
           </div>
-          <div style={{position:'absolute',bottom:13,right:10,fontSize:10,color:'rgba(255,255,255,0.5)',pointerEvents:'none'}}>Scroll to zoom · Space+drag to pan</div>
+          <div style={{position:'absolute',bottom:13,right:10,fontSize:10,color:'rgba(255,255,255,0.5)',pointerEvents:'none'}}>Space+drag to pan</div>
         </div>
 
         {/* Moves panel */}

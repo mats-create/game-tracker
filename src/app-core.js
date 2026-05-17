@@ -525,7 +525,7 @@ function TacticsBoard(){
       const half=markerHalf(st);
       drawSquareMarker(ctx,m.x,m.y,half,phaseColor,isSel?'#fff':'rgba(255,255,255,0.75)',isSel?2.5:1.5);
       if(isSel){ctx.setLineDash([4,3]);drawSquareMarker(ctx,m.x,m.y,half+4,null,'rgba(255,255,255,0.5)',1.5);ctx.setLineDash([]);}
-      const mfs=Math.max(7,Math.round(half*1.3));
+      const mfs=markerLabelFS(half);
       ctx.fillStyle='#fff';ctx.font=`bold ${mfs}px Inter,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillText(phaseLabel(p.label),m.x,m.y+Math.round(mfs*0.06));
     }));
@@ -549,9 +549,9 @@ function TacticsBoard(){
         const ec=(p.team==='A'?st.edgeColorA:st.edgeColorB)||'rgba(255,255,255,0.85)';
         ctx.strokeStyle=ec;ctx.lineWidth=ew;ctx.stroke();
       }
-      const contrast=st.labelContrast||'normal',fs=Math.max(9,Math.round(r*1.1));
+      const contrast=st.labelContrast||'normal',fs=playerNumFS(r);
       ctx.font=`bold ${fs}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-      if(isGhost){ctx.font=`bold ${Math.max(9,Math.round(r*1.1))}px Inter,sans-serif`;ctx.strokeStyle='rgba(0,0,0,0.82)';ctx.lineWidth=3;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle=col;ctx.fillText(p.num,p.x,p.y);}
+      if(isGhost){ctx.font=`bold ${playerNumFS(r)}px Inter,sans-serif`;ctx.strokeStyle='rgba(0,0,0,0.82)';ctx.lineWidth=3;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle=col;ctx.fillText(p.num,p.x,p.y);}
       else if(contrast==='outline'){ctx.strokeStyle='rgba(0,0,0,0.88)';ctx.lineWidth=3;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle='#fff';ctx.fillText(p.num,p.x,p.y);}
       else if(contrast==='dark'){ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=2;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle='#111';ctx.fillText(p.num,p.x,p.y);}
       else{ctx.fillStyle='#fff';ctx.fillText(p.num,p.x,p.y);}
@@ -569,7 +569,7 @@ function TacticsBoard(){
 
   // ─── DRAW: BALLS ──────────────────────────────────────────────────────────
   function drawBalls(ctx,balls,selB,v,pR){
-    const br=Math.max(6,Math.round(pR*0.65));
+    const br=ballRadius(pR);
     function drawOne(bx,by,br2,sel,ghost,score){
       ctx.save();
       if(ghost){
@@ -649,7 +649,7 @@ function TacticsBoard(){
           ctx.beginPath();ctx.arc(cx+dr,ry+dr,dr,0,Math.PI*2);ctx.fillStyle=jerseyCol;ctx.fill();
           ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1;ctx.stroke();
           // Jersey number inside dot
-          ctx.font=`bold ${Math.max(8,Math.round(dr*1.2))}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.font=`bold ${legendDotNumFS(dr)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
           ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=1.5;ctx.lineJoin='round';ctx.strokeText(p.num,cx+dr,ry+dr);
           ctx.fillStyle='#fff';ctx.fillText(p.num,cx+dr,ry+dr);
           // Player name
@@ -679,7 +679,7 @@ function TacticsBoard(){
           const ry=ly+pad+Math.round(14*sc)+pad/2+i*lineH,dr=dotS/2;
           ctx.beginPath();ctx.arc(lx+pad+dr,ry+dr,dr,0,Math.PI*2);ctx.fillStyle=p.jerseyCol;ctx.fill();
           ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1;ctx.stroke();
-          ctx.font=`bold ${Math.max(8,Math.round(dr*1.2))}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.font=`bold ${legendDotNumFS(dr)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
           ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=1.5;ctx.lineJoin='round';ctx.strokeText(p.num,lx+pad+dr,ry+dr);
           ctx.fillStyle='#fff';ctx.fillText(p.num,lx+pad+dr,ry+dr);
           ctx.fillStyle=textCol;ctx.font=`${nameFs}px sans-serif`;ctx.textAlign='left';ctx.textBaseline='middle';
@@ -719,8 +719,8 @@ function TacticsBoard(){
         const ry=rowY,bx=lx+pad+br,textX=lx+pad+br*2+Math.round(6*sc);
         const lineMid=ry+stepLineH/2;
         drawSquareMarker(ctx,bx,lineMid,br,phaseColor,'rgba(255,255,255,0.4)',1);
-        ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(5,Math.round(br*0.9))}px Inter,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText(phaseLabel(p.label),bx,lineMid+Math.round(Math.max(5,Math.round(br*0.9))*0.06));
+        ctx.fillStyle='#fff';ctx.font=`bold ${stepMarkerFS(br)}px Inter,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(phaseLabel(p.label),bx,lineMid+Math.round(stepMarkerFS(br)*0.06));
         ctx.fillStyle=textCol;ctx.font=`${nameFs}px sans-serif`;ctx.textAlign='left';ctx.textBaseline='middle';
         const note=p.note&&p.note.trim()?p.note:'—';
         const noteMaxW=boxW-pad*2-br*2-Math.round(5*sc);

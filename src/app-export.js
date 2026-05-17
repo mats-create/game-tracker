@@ -337,31 +337,33 @@
     ballSVGLines(balls.filter(function(bl){return !bl.ghost;}),pR,false,st.ballSize).forEach(function(l){svgLines.push(l);});
     legendSVGLines(st,cA,cB,ph,phaseColor).forEach(function(l){svgLines.push(l);});
 
-    // ── Aida weave inset — bottom-right corner of pitch SVG ──
+    // ── Aida weave inset — top-right corner of pitch SVG ──
     // Rasterises the ball geometry onto a 14-count Aida grid as an embroidery reference.
-    // Uses first ball from array; falls back to a plain non-ghost ball if first is ghost.
+    // Prefers first non-ghost ball; falls back to ghost only if no solid ball exists.
     (function(){
-      var refBall=balls[0];
+      var refBall=null;
+      for(var bi=0;bi<balls.length;bi++){if(!balls[bi].ghost){refBall=balls[bi];break;}}
+      if(!refBall)refBall=balls[0];
       if(!refBall)return;
 
-      // Grid constants
-      var CELL=7;        // SVG units per stitch cell
-      var COLS=24;
-      var ROWS=24;
-      var PNL_W=COLS*CELL;  // 168
-      var PNL_H=ROWS*CELL;  // 168
+      // Grid constants — sized to ~11% of pitch width, readable without dominating
+      var CELL=5;        // SVG units per stitch cell
+      var COLS=18;
+      var ROWS=18;
+      var PNL_W=COLS*CELL;  // 90
+      var PNL_H=ROWS*CELL;  // 90
       var MARGIN=14;         // margin from pitch edge
 
-      // Panel origin — bottom-right of pitch viewBox
+      // Panel origin — top-right of pitch viewBox
       var px=bx+bw-PNL_W-MARGIN;
-      var py=by+bh-PNL_H-MARGIN;
+      var py=by+MARGIN;
 
-      // Ball geometry in raster space — centred on grid
-      var BR=Math.floor(COLS/2)*CELL-CELL;  // radius fills grid with 1-cell margin
-      var cx2=Math.floor(COLS/2)*CELL;      // ball centre x in panel coords
-      var cy2=Math.floor(ROWS/2)*CELL;      // ball centre y in panel coords
-      var INNER_R=BR*0.38;                  // pentagon inner radius
-      var RING_W=CELL*1.2;                  // outer ring stroke width in raster units
+      // Ball geometry in raster space — centred on grid, radius = 7 cells
+      var BR=7*CELL;                         // 35 units — fills grid with 2-cell margin each side
+      var cx2=Math.floor(COLS/2)*CELL;       // ball centre x in panel coords
+      var cy2=Math.floor(ROWS/2)*CELL;       // ball centre y in panel coords
+      var INNER_R=BR*0.38;                   // pentagon inner radius (~13 units)
+      var RING_W=CELL*1.1;                   // outer ring stroke width
 
       var isGhost=refBall.ghost;
 

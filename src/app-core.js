@@ -542,7 +542,7 @@ function TacticsBoard(){
         ctx.save();
         ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.clip();
         ctx.fillStyle='#F5F5F5';ctx.fillRect(p.x-r,p.y-r,r*2,r*2);
-        ctx.strokeStyle=col;ctx.lineWidth=2.2;ctx.globalAlpha=0.55;
+        ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.globalAlpha=0.55;
         const stripeGap=6,stripeCount=Math.ceil(r*4/stripeGap)+2;
         ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.PI/4);
         for(let si=-stripeCount;si<=stripeCount;si++){
@@ -585,7 +585,7 @@ function TacticsBoard(){
       ctx.save();
       if(ghost){
         ctx.beginPath();ctx.arc(bx,by,br2,0,Math.PI*2);
-        ctx.fillStyle='#F0E6D3';ctx.fill();
+        ctx.fillStyle='#CCCCCC';ctx.fill();
         ctx.beginPath();
         for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2,px=bx+Math.cos(a)*(br2*0.38),py=by+Math.sin(a)*(br2*0.38);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
         ctx.closePath();ctx.strokeStyle='#AAAAAA';ctx.lineWidth=0.9;ctx.stroke();

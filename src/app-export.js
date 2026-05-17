@@ -115,7 +115,7 @@
     lines.push(`<defs>`);
     lines.push(`  <pattern id="str${id}" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">`);
     lines.push(`    <rect width="6" height="6" fill="#F5F5F5"/>`);
-    lines.push(`    <line x1="0" y1="0" x2="0" y2="6" stroke="${col}" stroke-width="2.2" opacity="0.55"/>`);
+    lines.push(`    <line x1="0" y1="0" x2="0" y2="6" stroke="${col}" stroke-width="2.5" opacity="0.55"/>`);
     lines.push(`  </pattern>`);
     lines.push(`  <clipPath id="cp${id}">`);
     lines.push(`    <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}"/>`);
@@ -155,7 +155,7 @@
         const pts=[];
         for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2;pts.push([bl.x+Math.cos(a)*(br*0.38),bl.y+Math.sin(a)*(br*0.38)]);}
         const poly=pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
-        out2.push(`<circle cx="${bl.x.toFixed(1)}" cy="${bl.y.toFixed(1)}" r="${br}" fill="#F0E6D3" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4 4"/>`);
+        out2.push(`<circle cx="${bl.x.toFixed(1)}" cy="${bl.y.toFixed(1)}" r="${br}" fill="#CCCCCC" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4 4"/>`);
         out2.push(`<polygon points="${poly}" fill="none" stroke="#AAAAAA" stroke-width="0.9"/>`);
         for(let i=0;i<5;i++){
           const a=i*Math.PI*2/5-Math.PI/2;
@@ -581,7 +581,7 @@
       var pts2=[];
       for(var i=0;i<5;i++){var a2=i*Math.PI*2/5-Math.PI/2;pts2.push([bl.x+Math.cos(a2)*(br2*0.38),bl.y+Math.sin(a2)*(br2*0.38)]);}
       var poly2=pts2.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
-      svgLines.push('<circle cx="'+bl.x.toFixed(1)+'" cy="'+bl.y.toFixed(1)+'" r="'+br2+'" fill="#F0E6D3" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4 4"/>');
+      svgLines.push('<circle cx="'+bl.x.toFixed(1)+'" cy="'+bl.y.toFixed(1)+'" r="'+br2+'" fill="#CCCCCC" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4 4"/>');
       svgLines.push('<polygon points="'+poly2+'" fill="none" stroke="#AAAAAA" stroke-width="0.9"/>');
       for(var j=0;j<5;j++){
         var aj=j*Math.PI*2/5-Math.PI/2;

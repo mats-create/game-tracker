@@ -2440,195 +2440,224 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
     const{players:pl,arrows:arr,phases:ph,phaseColor,balls,colorA:cA,colorB:cB,
       teamNameA,teamNameB,view:v,pR,cropRegion:cr,exportFormat:fmt,exportOrientation:ori}=st;
 
-    // Render board to offscreen canvas at 4x for print quality
-    const SCALE=4;
+    const hs=AHEAD[st.arrowHeadSize]!==undefined?AHEAD[st.arrowHeadSize]:7;
     const bx=cr?cr.x:0,by=cr?cr.y:0,bw=cr?Math.max(cr.w,10):W,bh=cr?Math.max(cr.h,10):H;
-    let pitchImg;
-    try{
-      const oc=document.createElement('canvas');
-      oc.width=Math.round(bw*SCALE);oc.height=Math.round(bh*SCALE);
-      const oc2=oc.getContext('2d');
-      oc2.setTransform(SCALE,0,0,SCALE,-bx*SCALE,-by*SCALE);
-      drawPitch(oc2,v);
-      drawArrows(oc2,arr,null,AHEAD[st.arrowHeadSize]!==undefined?AHEAD[st.arrowHeadSize]:7);
-      drawPhaseMarkers(oc2,ph,phaseColor,null,st);
-      drawPlayers(oc2,pl,v,pR,cA,cB,st);
-      drawBalls(oc2,balls,null,v,pR);
-      drawSymbols(oc2,st.symbols,null);
-      drawLegends(oc2,st,cA,cB,ph,phaseColor);
-      pitchImg=oc.toDataURL('image/png');
-    }catch(err){
-      alert('PDF render error: '+err.message);return;
-    }
 
-    const pdfFmt=fmt==='letter'?'letter':'a4';
-    const doc=new jsPDF({orientation:'portrait',unit:'pt',format:pdfFmt});
-    const PW=pdfFmt==='letter'?612:595,PH=pdfFmt==='letter'?792:842;
-    const MX=30,MY=0,usableW=PW-MX*2;
-    let y=MY;
-
-    const mo=st.moment||{};
-    const hasMoment=mo.heading||mo.what||mo.event||mo.at||mo.when||mo.who;
-
-    const tnA=teamNameA||'Team A',tnB=teamNameB||'Team B';
-    const dateStr=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-
-    // ── N&N brand header bar ── real logo (NN_Logo_WithTagline_Reversed_4x.png)
-    const HDR_H=38;
-    doc.setFillColor(26,26,26);
-    doc.rect(0,0,PW,HDR_H,'F');
-    // Logo image: 2580x780px source, rendered at 86x26pt, vertically centred
-    // NN_LOGO_REV defined in app-logos.js
-    doc.addImage(NN_LOGO_REV,'PNG',MX,6,86,26,undefined,'FAST');
-    // Domain right-aligned in header
-    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(102,102,102);
-    doc.text('nutmegneedle.com',PW-MX,HDR_H/2+2.5,{align:'right'});
-
-    y=HDR_H+10;
-
-    // ── Metadata subline ──
-    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(130,130,130);
-    doc.text(tnA+' vs '+tnB+'   \u00B7   '+dateStr+'   \u00B7   '+fmt.toUpperCase()+' '+ori,MX,y);
-    y+=14;
-
-    // ── Memorable moment section ──
-    if(hasMoment){
-      const moX=MX,moW=usableW;
-      // Typography matching the reference document:
-      // - MEMORABLE MOMENT: 7pt bold caps, amber
-      // - Heading: 16pt bold, black
-      // - Field labels: 8pt bold caps, dark, own line
-      // - Field values: 9.5pt normal, dark, own line(s)
-      // - Each field group separated by 6pt gap after value
-      // No background card — clean document layout
-      const FS_LABEL=7.5,FS_HEADING=16,FS_VALUE=9.5;
-      const LINE_H=12.5; // value line height (~9.5pt font at 1.3x)
-      const GAP_AFTER=7;  // gap after each field value block
-      const C_LABEL=[204,51,0],C_HEADING=[26,26,26],C_VALUE=[50,48,46];
-
-      // Dry-run to measure total height
-      doc.setFontSize(FS_VALUE);
-      let dryH=14+18; // top margin + "MEMORABLE MOMENT" label + gap
-      if(mo.heading&&mo.heading.trim()){
-        doc.setFontSize(FS_HEADING);
-        dryH+=doc.splitTextToSize(mo.heading.trim(),moW).length*20+10;
+    // Build pitch SVG using same pipeline as exportPatternPDF — Pitch Green lines, light stripes
+    var svgLines=[];
+    svgLines.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+bw+'" height="'+bh+'" viewBox="'+bx+' '+by+' '+bw+' '+bh+'">');
+    svgLines.push('<rect x="'+bx+'" y="'+by+'" width="'+bw+'" height="'+bh+'" fill="#ffffff"/>');
+    pitchSVGLines(false).forEach(function(l){
+      svgLines.push(
+        l.replace(/fill="#3a7d44"/g,'fill="#e8f0e8"')
+         .replace(/fill="#2f6b38"/g,'fill="#dceadc"')
+         .replace(/stroke="rgba\(255,255,255,0\.88\)"/g,'stroke="#4A6741"')
+         .replace(/stroke="#ffffff"/g,'stroke="#4A6741"')
+      );
+    });
+    arrowSVGLines(arr,hs,false).forEach(function(l){svgLines.push(l);});
+    symbolSVGLines(st.symbols).forEach(function(l){svgLines.push(l);});
+    markerSVGLines(ph,phaseColor,st.markerSize,pR).forEach(function(l){svgLines.push(l);});
+    pl.filter(function(p){return !p.hidden&&p.ghost;}).forEach(function(p){
+      var col=p.team==='A'?cA:cB;
+      ghostPlayerSVG(p,pR,col).forEach(function(l){svgLines.push(l);});
+    });
+    playerSVGLines(pl.filter(function(p){return !p.ghost;}),cA,cB,st,false,false).forEach(function(l){svgLines.push(l);});
+    balls.filter(function(bl){return bl.ghost;}).forEach(function(bl){
+      var br2=ballRadius(pR,st.ballSize);
+      var pts2=[];
+      for(var i=0;i<5;i++){var a2=i*Math.PI*2/5-Math.PI/2;pts2.push([bl.x+Math.cos(a2)*(br2*0.38),bl.y+Math.sin(a2)*(br2*0.38)]);}
+      var poly2=pts2.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
+      svgLines.push('<circle cx="'+bl.x.toFixed(1)+'" cy="'+bl.y.toFixed(1)+'" r="'+br2+'" fill="#CCCCCC" stroke="#AAAAAA" stroke-width="1.5" stroke-dasharray="4 4"/>');
+      svgLines.push('<polygon points="'+poly2+'" fill="none" stroke="#AAAAAA" stroke-width="0.9"/>');
+      for(var j=0;j<5;j++){
+        var aj=j*Math.PI*2/5-Math.PI/2;
+        var ix2=pts2[j][0],iy2=pts2[j][1];
+        var ox2=(bl.x+Math.cos(aj)*br2).toFixed(1),oy2=(bl.y+Math.sin(aj)*br2).toFixed(1);
+        svgLines.push('<line x1="'+ix2.toFixed(1)+'" y1="'+iy2.toFixed(1)+'" x2="'+ox2+'" y2="'+oy2+'" stroke="#AAAAAA" stroke-width="0.9"/>');
+        var aj2=aj+Math.PI*2/10,mx2=(bl.x+Math.cos(aj2)*(br2*0.75)).toFixed(1),my2=(bl.y+Math.sin(aj2)*(br2*0.75)).toFixed(1);
+        svgLines.push('<line x1="'+ix2.toFixed(1)+'" y1="'+iy2.toFixed(1)+'" x2="'+mx2+'" y2="'+my2+'" stroke="#AAAAAA" stroke-width="0.9"/>');
       }
-      doc.setFontSize(FS_VALUE);
-      const fields=[mo.what,mo.event,mo.at,mo.when,mo.who];
-      fields.forEach(v=>{
-        if(v&&v.trim()){
-          dryH+=FS_LABEL+2; // label line
-          dryH+=doc.splitTextToSize(v.trim(),moW).length*LINE_H;
-          dryH+=GAP_AFTER;
-        }
-      });
-      dryH+=6; // bottom margin
+    });
+    ballSVGLines(balls.filter(function(bl){return !bl.ghost;}),pR,false,st.ballSize).forEach(function(l){svgLines.push(l);});
+    legendSVGLines(st,cA,cB,ph,phaseColor).forEach(function(l){svgLines.push(l);});
+    svgLines.push('</svg>');
 
-      // Coral left border accent — single vertical line
-      doc.setDrawColor(204,51,0);doc.setLineWidth(3);
-      doc.line(MX,y,MX,y+dryH);
-      doc.setLineWidth(0.5);
+    var svgStr=svgLines.join('\n');
+    var DPI_SCALE=4;
+    var ocW=Math.round(bw*DPI_SCALE),ocH=Math.round(bh*DPI_SCALE);
+    var oc=document.createElement('canvas');
+    oc.width=ocW;oc.height=ocH;
+    var oc2=oc.getContext('2d');
+    var img=new Image();
+    var svgBlob=new Blob([svgStr],{type:'image/svg+xml;charset=utf-8'});
+    var svgUrl=URL.createObjectURL(svgBlob);
 
-      const tx=MX+8; // text indent from border
+    img.onerror=function(){alert('PDF render error: could not rasterise pitch SVG.');};
+    img.onload=function(){
+      oc2.drawImage(img,0,0,ocW,ocH);
+      URL.revokeObjectURL(svgUrl);
+      var pitchImg=oc.toDataURL('image/png');
+
+      const pdfFmt=fmt==='letter'?'letter':'a4';
+      const doc=new jsPDF({orientation:'portrait',unit:'pt',format:pdfFmt});
+      const PW=pdfFmt==='letter'?612:595,PH=pdfFmt==='letter'?792:842;
+      const MX=30,MY=0,usableW=PW-MX*2;
+      let y=MY;
+
+      const mo=st.moment||{};
+      const hasMoment=mo.heading||mo.what||mo.event||mo.at||mo.when||mo.who;
+
+      const tnA=teamNameA||'Team A',tnB=teamNameB||'Team B';
+      const dateStr=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+
+      // ── N&N brand header bar ── real logo (NN_Logo_WithTagline_Reversed_4x.png)
+      const HDR_H=38;
+      doc.setFillColor(26,26,26);
+      doc.rect(0,0,PW,HDR_H,'F');
+      // Logo image: 2580x780px source, rendered at 86x26pt, vertically centred
+      // NN_LOGO_REV defined in app-logos.js
+      doc.addImage(NN_LOGO_REV,'PNG',MX,6,86,26,undefined,'FAST');
+      // Domain right-aligned in header
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(102,102,102);
+      doc.text('nutmegneedle.com',PW-MX,HDR_H/2+2.5,{align:'right'});
+
+      y=HDR_H+10;
+
+      // ── Metadata subline ──
+      doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(130,130,130);
+      doc.text(tnA+' vs '+tnB+'   \u00B7   '+dateStr+'   \u00B7   '+fmt.toUpperCase()+' '+ori,MX,y);
       y+=14;
 
-      // "MEMORABLE MOMENT" section label
-      doc.setFont('helvetica','bold');doc.setFontSize(FS_LABEL);
-      doc.setTextColor(...C_LABEL);
-      doc.text('MEMORABLE MOMENT',tx,y);y+=18;
+      // ── Memorable moment section ──
+      if(hasMoment){
+        const moW=usableW;
+        const FS_LABEL=7.5,FS_HEADING=16,FS_VALUE=9.5;
+        const LINE_H=12.5;
+        const GAP_AFTER=7;
+        const C_LABEL=[204,51,0],C_HEADING=[26,26,26],C_VALUE=[50,48,46];
 
-      // Heading
-      if(mo.heading&&mo.heading.trim()){
-        doc.setFont('helvetica','bold');doc.setFontSize(FS_HEADING);
-        doc.setTextColor(...C_HEADING);
-        doc.splitTextToSize(mo.heading.trim(),moW-8).forEach(l=>{doc.text(l,tx,y);y+=20;});
-        y+=8;
-      }
+        // Dry-run to measure total height
+        doc.setFontSize(FS_VALUE);
+        let dryH=14+18;
+        if(mo.heading&&mo.heading.trim()){
+          doc.setFontSize(FS_HEADING);
+          dryH+=doc.splitTextToSize(mo.heading.trim(),moW).length*20+10;
+        }
+        doc.setFontSize(FS_VALUE);
+        const fields=[mo.what,mo.event,mo.at,mo.when,mo.who];
+        fields.forEach(function(fv){
+          if(fv&&fv.trim()){
+            dryH+=FS_LABEL+2;
+            dryH+=doc.splitTextToSize(fv.trim(),moW).length*LINE_H;
+            dryH+=GAP_AFTER;
+          }
+        });
+        dryH+=6;
 
-      // Field renderer: label on own line, value on next line(s)
-      function moField(label,value,fullWidth){
-        if(!value||!value.trim())return;
+        // Coral left border accent
+        doc.setDrawColor(204,51,0);doc.setLineWidth(3);
+        doc.line(MX,y,MX,y+dryH);
+        doc.setLineWidth(0.5);
+
+        const tx=MX+8;
+        y+=14;
+
+        // "MEMORABLE MOMENT" section label
         doc.setFont('helvetica','bold');doc.setFontSize(FS_LABEL);
-        doc.setTextColor(...C_LABEL);
-        doc.text(label,tx,y);
-        y+=FS_LABEL+2;
-        doc.setFont('helvetica','normal');doc.setFontSize(FS_VALUE);
-        doc.setTextColor(...C_VALUE);
-        const maxW=fullWidth?moW-8:moW-8;
-        doc.splitTextToSize(value.trim(),maxW).forEach(l=>{doc.text(l,tx,y);y+=LINE_H;});
-        y+=GAP_AFTER;
+        doc.setTextColor(C_LABEL[0],C_LABEL[1],C_LABEL[2]);
+        doc.text('MEMORABLE MOMENT',tx,y);y+=18;
+
+        // Heading
+        if(mo.heading&&mo.heading.trim()){
+          doc.setFont('helvetica','bold');doc.setFontSize(FS_HEADING);
+          doc.setTextColor(C_HEADING[0],C_HEADING[1],C_HEADING[2]);
+          doc.splitTextToSize(mo.heading.trim(),moW-8).forEach(function(l){doc.text(l,tx,y);y+=20;});
+          y+=8;
+        }
+
+        // Field renderer: label on own line, value on next line(s)
+        function moField(label,value){
+          if(!value||!value.trim())return;
+          doc.setFont('helvetica','bold');doc.setFontSize(FS_LABEL);
+          doc.setTextColor(C_LABEL[0],C_LABEL[1],C_LABEL[2]);
+          doc.text(label,tx,y);
+          y+=FS_LABEL+2;
+          doc.setFont('helvetica','normal');doc.setFontSize(FS_VALUE);
+          doc.setTextColor(C_VALUE[0],C_VALUE[1],C_VALUE[2]);
+          doc.splitTextToSize(value.trim(),moW-8).forEach(function(l){doc.text(l,tx,y);y+=LINE_H;});
+          y+=GAP_AFTER;
+        }
+
+        moField('WHAT',mo.what);
+        moField('EVENT',mo.event);
+        moField('AT',mo.at);
+        moField('WHEN',mo.when);
+        moField('WHO',mo.who);
+
+        y+=4;
       }
 
-      // Render each field in order matching reference document
-      moField('WHAT',mo.what,true);
-      moField('EVENT',mo.event,true);
-      moField('AT',mo.at,true);
-      moField('WHEN',mo.when,true);
-      moField('WHO',mo.who,true);
+      // ── Pitch image — capped at 180pt to keep document compact ──
+      const MAX_PITCH_H=180;
+      const naturalH=Math.round(usableW*bh/bw);
+      const pitchH=Math.min(naturalH,MAX_PITCH_H);
+      const pitchW=pitchH===naturalH?usableW:Math.round(pitchH*bw/bh);
+      const pitchX=MX+Math.round((usableW-pitchW)/2);
+      doc.addImage(pitchImg,'PNG',pitchX,y,pitchW,pitchH,undefined,'FAST');
+      y+=pitchH+12;
 
-      y+=4; // bottom margin
-    }
-    const maxPitchH=PH-MY-46-12-8-18-120; // page minus header,divider,col headers,min col space
-    const naturalH=Math.round(usableW*bh/bw);
-    const pitchH=Math.min(naturalH,maxPitchH);
-    const pitchW=pitchH===naturalH?usableW:Math.round(pitchH*bw/bh);
-    const pitchX=MX+Math.round((usableW-pitchW)/2);
-    doc.addImage(pitchImg,'PNG',pitchX,y,pitchW,pitchH,undefined,'FAST');
-    y+=pitchH+12;
+      // ── Thread colours — full width ──
+      const{r:chR,g:chG,b:chB}=hexToRgb('#F0E6D3');
+      doc.setFillColor(chR,chG,chB);doc.rect(MX,y,usableW,15,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(204,51,0);
+      doc.text('THREAD COLOURS',MX+4,y+10);
+      doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(102,102,102);
+      doc.text('Brand name  \u00B7  DMC code',PW-MX-4,y+10,{align:'right'});
+      y+=19;
 
-    // ── Thread colours — full width ──
+      // Two-column grid for colour swatches
+      const swatchColW=(usableW-10)/2,swatchCol2=MX+swatchColW+10;
+      let swatchY1=y,swatchY2=y,swatchIdx=0;
+      const seen=new Set();
+      function addColour(hex,label){
+        if(seen.has(hex))return;seen.add(hex);
+        const swatchX=swatchIdx%2===0?MX:swatchCol2;
+        const rowY=swatchIdx%2===0?swatchY1:swatchY2;
+        if(rowY>PH-50){doc.addPage();swatchY1=MY;swatchY2=MY;}
+        const{r:rr,g:gg,b:bb}=hexToRgb(hex);
+        doc.setFillColor(rr,gg,bb);doc.rect(swatchX,rowY,12,9,'F');
+        doc.setDrawColor(150,150,150);doc.setLineWidth(0.3);doc.rect(swatchX,rowY,12,9,'S');
+        doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(40,40,40);
+        doc.text(label,swatchX+15,rowY+5.5);
+        doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(100,100,100);
+        doc.text(nnThreadLabel(hex),swatchX+15,rowY+12);
+        if(swatchIdx%2===0){swatchY1+=18;}else{swatchY2+=18;}
+        swatchIdx++;
+      }
+      addColour(cA,tnA);
+      addColour(cB,tnB);
+      addColour(phaseColor,'Step markers');
+      if(st.edgeColorA&&st.edgeColorA!=='#ffffff')addColour(st.edgeColorA,tnA+' ring');
+      if(st.edgeColorB&&st.edgeColorB!=='#ffffff')addColour(st.edgeColorB,tnB+' ring');
+      balls.forEach(function(bl,bi){if(!bl.ghost)addColour('#FFFFFF','Ball'+(balls.length>1?' '+(bi+1):''));});
+      arr.forEach(function(a){if(a.color)addColour(a.color,'Arrow');});
+      (st.symbols||[]).forEach(function(sym,si){if(sym.color)addColour(sym.color,'Symbol '+(si+1));});
+      y=Math.max(swatchY1,swatchY2)+6;
 
-    // Section header — linen background, brand typography
-    const{r:chR,g:chG,b:chB}=hexToRgb('#F0E6D3');
-    doc.setFillColor(chR,chG,chB);doc.rect(MX,y,usableW,15,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(204,51,0);
-    doc.text('THREAD COLOURS',MX+4,y+10);
-    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(102,102,102);
-    doc.text('Brand name  \u00B7  DMC code',PW-MX-4,y+10,{align:'right'});
-    y+=19;
-
-    // Two-column grid for colour swatches
-    const swatchColW=(usableW-10)/2,swatchCol2=MX+swatchColW+10;
-    let swatchY1=y,swatchY2=y,swatchIdx=0;
-    const seen=new Set();
-    function addColour(hex,label){
-      if(seen.has(hex))return;seen.add(hex);
-      const swatchX=swatchIdx%2===0?MX:swatchCol2;
-      const rowY=swatchIdx%2===0?swatchY1:swatchY2;
-      if(rowY>PH-50){doc.addPage();swatchY1=MY;swatchY2=MY;}
-      const{r:rr,g:gg,b:bb}=hexToRgb(hex);
-      const dmc=nearestDMC(hex);
-      doc.setFillColor(rr,gg,bb);doc.rect(swatchX,rowY,12,9,'F');
-      doc.setDrawColor(150,150,150);doc.setLineWidth(0.3);doc.rect(swatchX,rowY,12,9,'S');
-      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(40,40,40);
-      doc.text(label,swatchX+15,rowY+5.5);
-      doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(100,100,100);
-      doc.text(nnThreadLabel(hex),swatchX+15,rowY+12);
-      if(swatchIdx%2===0){swatchY1+=18;}else{swatchY2+=18;}
-      swatchIdx++;
-    }
-    addColour(cA,tnA);
-    addColour(cB,tnB);
-    addColour(phaseColor,'Step markers');
-    if(st.edgeColorA&&st.edgeColorA!=='#ffffff')addColour(st.edgeColorA,tnA+' ring');
-    if(st.edgeColorB&&st.edgeColorB!=='#ffffff')addColour(st.edgeColorB,tnB+' ring');
-    balls.forEach((bl,bi)=>{if(!bl.ghost)addColour('#FFFFFF','Ball'+(balls.length>1?' '+(bi+1):''));});
-    arr.forEach(a=>{if(a.color)addColour(a.color,'Arrow');});
-    (st.symbols||[]).forEach(function(sym,si){if(sym.color)addColour(sym.color,'Symbol '+(si+1));});
-    y=Math.max(swatchY1,swatchY2)+6;
-
-    // ── Footer strip ── real logo (NN_Logo_WithTagline_Linen_4x.png)
-    const FTR_H=20;
-    doc.setFillColor(240,230,211);
-    doc.rect(0,PH-FTR_H,PW,FTR_H,'F');
-    // Logo image: 2580x780px source, rendered at 46x14pt, vertically centred in strip
-    // NN_LOGO_LINEN defined in app-logos.js
-    doc.addImage(NN_LOGO_LINEN,'PNG',MX,PH-FTR_H+3,46,14,undefined,'FAST');
-    // Date centred, domain right
-    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(102,102,102);
-    doc.text(new Date().toISOString().slice(0,10),PW/2,PH-6,{align:'center'});
-    doc.text('nutmegneedle.com',PW-MX,PH-6,{align:'right'});
-    doc.save('tactics-board-'+new Date().toISOString().slice(0,10)+'.pdf');
+      // ── Footer strip ── real logo (NN_Logo_WithTagline_Linen_4x.png)
+      const FTR_H=20;
+      doc.setFillColor(240,230,211);
+      doc.rect(0,PH-FTR_H,PW,FTR_H,'F');
+      // Logo image: 2580x780px source, rendered at 46x14pt, vertically centred in strip
+      // NN_LOGO_LINEN defined in app-logos.js
+      doc.addImage(NN_LOGO_LINEN,'PNG',MX,PH-FTR_H+3,46,14,undefined,'FAST');
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(102,102,102);
+      doc.text(new Date().toISOString().slice(0,10),PW/2,PH-6,{align:'center'});
+      doc.text('nutmegneedle.com',PW-MX,PH-6,{align:'right'});
+      doc.save('tactics-board-'+new Date().toISOString().slice(0,10)+'.pdf');
+    };
+    img.src=svgUrl;
   }
 
   // ─── EXPORT PATTERN PDF ───────────────────────────────────────────────────────

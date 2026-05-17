@@ -1,5 +1,5 @@
 // app-core.js -- UI primitives, TacticsBoard component body
-// Nutmeg&Needle Game Tracker by MPH -- edit this file, not index.html
+// Nutmeg&Needle Game Tracker -- edit this file, not index.html
 // Constants and pure utilities live in app-utils.js (loaded before this file).
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────

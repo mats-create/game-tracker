@@ -353,7 +353,7 @@
                   background:headOn?C.activeBg:'transparent',color:headOn?C.activeText:C.textMid}}>
                 {headOn?'Head: on':'Head: off'}
               </button>
-              <GhostBtn onClick={deleteSelectedArrow}>Delete</GhostBtn>
+              <GhostBtn onClick={deleteSelected}>Delete</GhostBtn>
             </InfoBar>;
           })()}
           {hasSelBall&&<InfoBar icon="⚽" text={`${hasSelBallGhost?'Ghost ball':'Ball'} selected.`}>
@@ -363,7 +363,7 @@
             <button onClick={()=>{const bl=st.balls[st.selectedBallIdx];if(bl){bl.score=!bl.score;redraw();}}} style={{fontSize:11,padding:'3px 8px',height:26,cursor:'pointer',borderRadius:6,border:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?C.activeBg:'transparent',color:st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?C.activeText:C.textMid}}>
               {st.balls[st.selectedBallIdx]&&st.balls[st.selectedBallIdx].score?'Score: on':'Score'}
             </button>
-            <GhostBtn onClick={deleteSelectedBall}>Delete</GhostBtn>
+            <GhostBtn onClick={deleteSelected}>Delete</GhostBtn>
           </InfoBar>}
           {hasSelPM&&(()=>{
             const spm=st.selectedPhaseMarker;
@@ -371,7 +371,7 @@
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
                 <span style={{fontSize:14}}>①</span>
                 <span style={{fontSize:11,color:C.activeText,flex:1}}>Step marker selected — drag to move</span>
-                <GhostBtn onClick={deleteSelectedPhaseMarker}>Delete</GhostBtn>
+                <GhostBtn onClick={deleteSelected}>Delete</GhostBtn>
               </div>
 
             </div>;
@@ -383,7 +383,7 @@
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
                 <span style={{fontSize:14}}>◈</span>
                 <span style={{fontSize:11,color:C.activeText,flex:1}}>Symbol selected — drag to move</span>
-                <GhostBtn onClick={deleteSelectedSymbol}>Delete</GhostBtn>
+                <GhostBtn onClick={deleteSelected}>Delete</GhostBtn>
               </div>
               <div style={{fontSize:10,color:C.textMuted,marginBottom:4,fontWeight:500}}>TYPE</div>
               <div style={{display:'flex',gap:3,flexWrap:'wrap',marginBottom:8}}>
@@ -481,7 +481,7 @@
             return React.createElement('div',{style:{marginTop:4,padding:'6px 8px',background:C.blueLight,borderRadius:8,border:'1px solid '+C.blueBorder}},
               React.createElement('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:4}},
                 React.createElement('span',{style:{fontSize:11,color:C.activeText,flex:1}},'Symbol selected — drag to move'),
-                React.createElement('button',{onClick:deleteSelectedSymbol,
+                React.createElement('button',{onClick:deleteSelected,
                   style:{fontSize:11,padding:'2px 7px',cursor:'pointer',borderRadius:5,border:'0.5px solid '+C.activeBorder,background:C.activeBg,color:C.activeText}},'Delete')
               ),
               React.createElement('div',{style:{fontSize:10,color:C.textMuted,marginBottom:4}},'Change type:'),

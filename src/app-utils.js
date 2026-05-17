@@ -297,3 +297,10 @@ function svgWrap(text,maxChars){
   words.forEach(w=>{if((cur+' '+w).trim().length<=maxChars){cur=(cur+' '+w).trim();}else{if(cur)lines.push(cur);cur=w;}});
   if(cur)lines.push(cur);return lines;
 }
+
+// ─── MARKER SIZE HELPER ──────────────────────────────────────────────────────
+// Returns the half-size of a phase marker in pixels.
+// extra: additional pixels to add (e.g. 5 for selection outline padding)
+function markerHalf(st,extra){
+  return(MSIZES[st.markerSize||'m']||Math.round(st.pR*1.4))+(extra||0);
+}

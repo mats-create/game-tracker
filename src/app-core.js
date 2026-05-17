@@ -208,7 +208,7 @@ function TacticsBoard(){
     for(let pi=st.phases.length-1;pi>=0;pi--){
       const markers=st.phases[pi].markers||[];
       for(let mi=markers.length-1;mi>=0;mi--){
-        const m=markers[mi],half=MSIZES[st.markerSize||'m']||Math.round(st.pR*1.4);
+        const m=markers[mi],half=markerHalf(st);
         if(Math.abs(pos.x-m.x)<=half&&Math.abs(pos.y-m.y)<=half)return{phaseIdx:pi,markerIdx:mi};
       }
     }
@@ -563,7 +563,7 @@ function TacticsBoard(){
   function drawPhaseMarkers(ctx,ph,phaseColor,selPM,st){
     ph.forEach((p,pi)=>(p.markers||[]).forEach((m,mi)=>{
       const isSel=selPM&&selPM.phaseIdx===pi&&selPM.markerIdx===mi;
-      const half=MSIZES[st.markerSize||'m']||Math.round(st.pR*1.4);
+      const half=markerHalf(st);
       drawSquareMarker(ctx,m.x,m.y,half,phaseColor,isSel?'#fff':'rgba(255,255,255,0.75)',isSel?2.5:1.5);
       if(isSel){ctx.setLineDash([4,3]);drawSquareMarker(ctx,m.x,m.y,half+4,null,'rgba(255,255,255,0.5)',1.5);ctx.setLineDash([]);}
       const mfs=Math.max(7,Math.round(half*1.3));
@@ -882,7 +882,7 @@ function TacticsBoard(){
       } else if(item.type==='marker'){
         const ph=st.phases[item.phaseIdx];
         if(ph&&ph.markers&&ph.markers[item.markerIdx]){
-          const m=ph.markers[item.markerIdx];const half=(MSIZES[st.markerSize||'m']||10)+5;
+          const m=ph.markers[item.markerIdx];const half=markerHalf(st,5);
           ctx.strokeRect(m.x-half,m.y-half,half*2,half*2);
         }
       }
@@ -1322,11 +1322,8 @@ function TacticsBoard(){
   }
 
   // Convenience wrappers — now go through confirmation
-  function deleteSelectedArrow(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
-  function deleteSelectedBall(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
-  function deleteSelectedSymbol(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
-  function deleteSelectedPhaseMarker(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
-  function deleteSelectedItems(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
+  // Single delete entry point -- replaces deleteSelectedArrow/Ball/Symbol/PhaseMarker/Items
+  function deleteSelected(){const items=selectionItems();if(items.length)requestDelete(items,itemLabel(items));}
   function setMarkerEventType(type){const st=S.current;if(!st.selectedPhaseMarker)return;const{phaseIdx,markerIdx}=st.selectedPhaseMarker;if(st.phases[phaseIdx]&&st.phases[phaseIdx].markers[markerIdx])st.phases[phaseIdx].markers[markerIdx].eventType=type;redraw();}
   function toggleBallGhost(){const st=S.current;if(st.selectedBallIdx===null)return;const bl=st.balls[st.selectedBallIdx];if(bl)bl.ghost=!bl.ghost;redraw();}
   function undoArrow(){S.current.arrows=S.current.arrows.slice(0,-1);S.current.selectedArrowIdx=null;redraw();}

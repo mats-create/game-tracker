@@ -97,6 +97,8 @@ GT-002 investigation identified that the first ~35KB of `app-core.js` consists e
 **Notes:**  
 Build order is now: `app-utils.js`, `app-core.js`, `app-logos.js`, `app-export.js`, `app-ui.js`.
 
+---
+
 ## Epic 2 — Code organisation and logical grouping
 
 *Goal: Move functions to the files they logically belong in, so that future sessions work on the right file for the right task.*
@@ -282,13 +284,260 @@ Ghost players and ghost balls were near-invisible on the white/off-white PDF bac
 
 ---
 
+## Epic 4 — Print Instructions PDF
+
+*Goal: Make the Print Instructions PDF a high-quality, brand-aligned embroidery reference document.*
+
+---
+
+### GT-040 · Align Print Instructions PDF pitch with Aida pattern output
+
+**Priority:** P1  
+**Confidence:** HIGH  
+**Status:** [x] Done -- 2026-05-17
+
+**Background:**  
+`exportPDF()` rendered the pitch via the live canvas draw functions, producing a dark green pitch with white lines — visually inconsistent with the Aida Pattern PDF. Both outputs should show the same pitch treatment.
+
+**What was built:**
+- `exportPDF()` now builds the pitch as an SVG blob using the same pipeline as `exportPatternPDF()`: light stripe fills (`#e8f0e8` / `#dceadc`), Pitch Green (`#4A6741`) lines, white background
+- Rasterised via Image/onload async callback — all jsPDF assembly moved inside callback
+- Pitch height capped at 180pt initially, later replaced by fill-to-footer calculation (GT-042)
+- Arrow spread (`...setTextColor`) replaced with explicit index access for Babel compatibility
+
+**Acceptance criteria:**
+- [x] Print Instructions PDF pitch shows white background, Pitch Green lines, light stripes
+- [x] Consistent with Aida Pattern PDF pitch treatment
+- [x] All elements (arrows, players, balls, markers, symbols, legends) present and correct
+- [x] No regression in Aida Pattern PDF or SVG exports
+
+---
+
+### GT-041 · Memorable moment section — linen card design
+
+**Priority:** P2  
+**Confidence:** HIGH  
+**Status:** [x] Done -- 2026-05-17
+
+**Background:**  
+The memorable moment section was plain text on white with a coral left-border line. No visual containment, inconsistent with the thread colours section style.
+
+**What was built:**
+- Linen (`#F0E6D3`) background card spanning full usable width
+- 15pt header bar at card top with `MEMORABLE MOMENT` in coral caps — matches `THREAD COLOURS` typographic treatment
+- Coral 3pt left border runs full card height
+- Internal padding 10pt vertical, 10pt horizontal
+- `cardTopY` recorded before drawing; `y` snapped to `cardTopY + dryH + 10` after block — no accumulated drift
+- Heading reduced to 15pt (from 16pt) to sit better within card
+
+**Acceptance criteria:**
+- [x] Linen card background rendered behind all moment content
+- [x] Header bar style matches thread colours section
+- [x] Coral border runs full card height
+- [x] y position after block is exact — no overlap with pitch image
+- [x] Renders correctly when moment is empty (block skipped entirely)
+
+---
+
+### GT-042 · Restructure PDF section order — threads before pitch, pitch fills page
+
+**Priority:** P2  
+**Confidence:** HIGH  
+**Status:** [x] Done -- 2026-05-17
+
+**Background:**  
+Previous order (pitch then threads) meant pitch height required an arbitrary cap to leave room for the thread table. Reversing the order allows the pitch to fill all remaining space above the footer exactly.
+
+**What was built:**
+- New order: header → metadata → memorable moment → thread colours → pitch → footer
+- Footer painted before pitch so its top edge is a known coordinate
+- Pitch height = `max(80, (PH - FTR_H - 8) - y)` — fills remaining space, 80pt minimum guard
+- `addColour()` overflow fixed: page check fires before `rowY` is read, so triggering swatch draws at top of new page (not off the bottom of the previous one)
+- Overflow resets `swatchY1/Y2` to `MY+8` on new page; footer and pitch follow on current page automatically
+
+**Acceptance criteria:**
+- [x] Thread colours appear above pitch in output
+- [x] Pitch fills available vertical space to footer on single page
+- [x] Thread overflow correctly starts a new page; pitch and footer follow on that page
+- [x] No content overlap between sections
+
+---
+
+### GT-043 · Thread list improvements
+
+**Priority:** P2  
+**Confidence:** HIGH  
+**Status:** [x] Done -- 2026-05-17
+
+**What was built:**
+- Pitch lines (`#4A6741`, "Pitch lines") always added as first thread entry — maps to DMC 3362
+- "Ball" label → "Ball outline" (reflects stitch purpose)
+- "Arrow" label → "Arrows" (consistent plural style)
+- Edge colour white guard changed to case-insensitive (`.toLowerCase()`) — catches `#FFFFFF` and `#ffffff`
+
+**Acceptance criteria:**
+- [x] Pitch lines always appear first in thread list regardless of board state
+- [x] Ball outline label correct
+- [x] Arrow label correct
+- [x] Edge colour white guard works for both hex cases
+
+---
+
+## Epic 5 — Embroidery how-to guide
+
+*Goal: A standalone multi-page PDF teaching first-time embroiderers how to stitch each N&N kit element.*
+
+---
+
+### GT-050 · Scaffold embroidery how-to guide — app-guide.js
+
+**Priority:** P2  
+**Confidence:** HIGH  
+**Status:** [~] In progress -- 2026-05-17
+
+**Background:**  
+The Print Instructions PDF is a per-design reference document. A separate how-to guide is needed to teach the embroidery techniques themselves — independent of any specific design. Targeted at first-time embroiderers buying a kit.
+
+**What was built:**
+- New file `src/app-guide.js` with entry point `exportGuidePDF()`
+- No dependency on board state — all content is generic/static
+- 6-page structure: Introduction, Ball, Player marker, Arrows, Move markers, Tips & finishing
+- Shared `drawHeader()` / `drawFooter()` / `drawAidaGrid()` helpers
+- `rasteriseBall()` fully implemented — same geometry as inset work, scaled up for full-page illustration (CELL=14, 28×28 grid)
+- Placeholder rasterisers for player, arrow, move marker — correct signatures, geometric approximations, marked TODO
+- Full stitch sequence copy on each element page
+- Tips & finishing page written in full
+
+**Acceptance criteria:**
+- [x] `app-guide.js` created with correct structure
+- [x] Ball page renders correct Aida grid with pentagon geometry
+- [ ] `app-guide.js` added to `build.py` concatenation order (after `app-utils.js`, before `app-ui.js`)
+- [ ] "Download guide" button wired in `app-ui.js` calling `exportGuidePDF()`
+- [ ] Player, arrow, move marker rasterisers fully implemented (see GT-051)
+- [ ] Live site generates correct 6-page PDF
+
+**Notes:**  
+File is complete and ready to add to repo. Wiring (`build.py` + `app-ui.js`) is a separate step — upload `build.py` and `app-ui.js` to complete.
+
+---
+
+### GT-051 · Implement guide rasterisers for player, arrow, move marker
+
+**Priority:** P2  
+**Confidence:** MEDIUM — geometry is understood, needs verification against actual grid output  
+**Status:** [ ] Not started
+
+**Background:**  
+`app-guide.js` has placeholder implementations for `rasterisePlayer()`, `rasteriseArrow()`, and `rasteriseMoveMarker()`. Each needs a proper geometry-based implementation matching the visual design of each element.
+
+**Scope per element:**
+
+*Player marker:*
+- Filled circle in team colour (satin/cross stitch fill)
+- Contrasting edge ring
+- Jersey number in white at centre (approximated as a simple digit pattern)
+- Configurable team colour + edge colour — guide shows a generic example using brand palette colours
+
+*Arrow:*
+- Straight arrow: diagonal backstitch path + two-cell arrowhead
+- Curved arrow: bezier-sampled path mapped to grid cells
+- Guide shows both variants on the same page
+
+*Move marker:*
+- Small filled square in phase colour
+- White label digit centred
+
+**Acceptance criteria:**
+- [ ] `rasterisePlayer()` renders recognisable filled circle with ring on grid
+- [ ] `rasteriseArrow()` renders both straight and curved arrow paths
+- [ ] `rasteriseMoveMarker()` renders filled square with centred digit
+- [ ] All three consistent with the ball rasteriser style
+- [ ] Guide PDF reads as a coherent visual reference across all pages
+
+**Files needed:** `src/app-guide.js`
+
+---
+
+### GT-052 · Wire guide export into app-ui.js and build.py
+
+**Priority:** P2  
+**Confidence:** HIGH  
+**Status:** [ ] Not started
+
+**Background:**  
+`exportGuidePDF()` exists in `app-guide.js` but is not reachable from the UI. Two wiring steps needed.
+
+**Acceptance criteria:**
+- [ ] `app-guide.js` added to `build.py` concatenation order after `app-utils.js`, before `app-ui.js`
+- [ ] "Download guide" button added to export panel in `app-ui.js`
+- [ ] Button calls `exportGuidePDF()` with no arguments
+- [ ] Guide PDF downloads correctly from live site
+
+**Files needed:** `src/build.py`, `src/app-ui.js`
+
+---
+
+## Epic 6 — Thread length estimation
+
+*Goal: Give the embroiderer an approximate thread length per colour so they know how much to cut before starting.*
+
+---
+
+### GT-060 · Thread length estimation — investigation
+
+**Priority:** P3  
+**Confidence:** LOW — needs investigation before sizing  
+**Status:** [ ] Not started · NEEDS INVESTIGATION
+
+**Background:**  
+Before an embroiderer starts stitching, knowing approximately how much thread to cut per colour reduces waste and avoids running out mid-section. The app already knows every element's geometry and colour — the missing piece is mapping that geometry to stitch counts and then to thread length.
+
+**User story:**  
+As an embroiderer preparing to stitch a Nutmeg&Needle design, I want to see an approximate thread length per colour on my instruction sheet, so that I know how much to cut before I start and do not run out mid-section.
+
+**What needs investigating:**
+
+*Stitch type mapping:*
+Each element type has a dominant stitch. The investigation should confirm the assumed mapping and the thread consumption multiplier per stitch type:
+- Players (filled circle): cross stitch fill — ~1.5× area coverage
+- Ball (outline + pentagon): backstitch outline + cross stitch fill — mixed
+- Arrows: backstitch — ~1× path length
+- Phase markers (filled square): cross stitch fill — ~1.5× area
+- Pitch lines: backstitch — ~1× path length (fixed geometry)
+
+*SVG-to-physical scale:*
+Confirm the conversion factor from SVG coordinate units to mm at 14-count Aida. From prior work: 1 stitch ≈ 5.37 SVG units. One cross stitch uses approximately 4× the stitch cell diagonal in thread (two diagonal passes + back travel). Verify against a physical test if possible.
+
+*Back travel fudge factor:*
+Thread carried on the back between areas is unpredictable. A +20% fudge factor is proposed — investigation should assess whether this is reasonable or needs adjusting per element type.
+
+*Output placement:*
+Determine where the length estimate surfaces:
+- Option A: additional column in thread colours table on Print Instructions PDF ("~Xcm")
+- Option B: separate UI display in the app before export
+- Option C: both
+
+*Implementation location:*
+A pure function `estimateThreadLengths(st)` returning `{ hex: cm }` map belongs in `app-utils.js`. PDF rendering of the estimate belongs in `app-export.js`.
+
+**Acceptance criteria for investigation:**
+- [ ] Stitch type map confirmed per element type
+- [ ] SVG-to-mm scale factor verified
+- [ ] Fudge factor assessed and documented
+- [ ] Output placement decided
+- [ ] New implementation story GT-061 created with MEDIUM or HIGH confidence
+
+**Files needed:** `src/app-utils.js`, `src/app-export.js`
+
+---
+
 ## Investigation queue
 
 Stories that cannot be planned or sized until files are uploaded and read.
 
 | ID | What needs investigating | Files needed |
-|----|--------------------------|--------------:|
-| — | Nothing currently queued | — |
+|----|--------------------------|--------------|
+| GT-060 | Thread length estimation — stitch map, scale factor, output placement | `app-utils.js`, `app-export.js` |
 
 ---
 
@@ -306,6 +555,10 @@ Stories that cannot be planned or sized until files are uploaded and read.
 - **GT-031** · Pentagon pattern in ball SVG/PDF export -- 2026-05-17
 - **GT-032** · Independent ball size control -- 2026-05-17
 - **GT-033** · Ghost element redesign for embroidery legibility -- 2026-05-17
+- **GT-040** · Print Instructions PDF pitch aligned with Aida pattern output -- 2026-05-17
+- **GT-041** · Memorable moment linen card design -- 2026-05-17
+- **GT-042** · PDF section reorder — threads before pitch, pitch fills page -- 2026-05-17
+- **GT-043** · Thread list improvements -- 2026-05-17
 
 ---
 
@@ -325,3 +578,6 @@ Stories that cannot be planned or sized until files are uploaded and read.
 | 2026-05-17 | GT-031 implemented -- pentagon pattern in all ball export paths |
 | 2026-05-17 | GT-032 implemented -- independent ball size XS/S/M/L |
 | 2026-05-17 | GT-033 implemented -- ghost player stripes + ghost ball grey, all paths |
+| 2026-05-17 | Epic 4 added -- Print Instructions PDF (GT-040 through GT-043), all completed |
+| 2026-05-17 | Epic 5 added -- Embroidery how-to guide (GT-050 scaffold done, GT-051/052 queued) |
+| 2026-05-17 | Epic 6 added -- Thread length estimation (GT-060 investigation queued) |

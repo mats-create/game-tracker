@@ -2612,16 +2612,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
         y=cardTopY+dryH+10;
       }
 
-      // ── Pitch image — capped at 180pt to keep document compact ──
-      const MAX_PITCH_H=180;
-      const naturalH=Math.round(usableW*bh/bw);
-      const pitchH=Math.min(naturalH,MAX_PITCH_H);
-      const pitchW=pitchH===naturalH?usableW:Math.round(pitchH*bw/bh);
-      const pitchX=MX+Math.round((usableW-pitchW)/2);
-      doc.addImage(pitchImg,'PNG',pitchX,y,pitchW,pitchH,undefined,'FAST');
-      y+=pitchH+12;
-
-      // ── Thread colours — full width ──
+      // ── Thread colours — full width, before pitch ──
       const{r:chR,g:chG,b:chB}=hexToRgb('#F0E6D3');
       doc.setFillColor(chR,chG,chB);doc.rect(MX,y,usableW,15,'F');
       doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(204,51,0);
@@ -2636,9 +2627,10 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
       const seen=new Set();
       function addColour(hex,label){
         if(seen.has(hex))return;seen.add(hex);
+        // Check overflow before reading rowY — fix draw-on-old-page bug
+        if(swatchIdx%2===0&&swatchY1>PH-50){doc.addPage();swatchY1=MY+8;swatchY2=MY+8;}
         const swatchX=swatchIdx%2===0?MX:swatchCol2;
         const rowY=swatchIdx%2===0?swatchY1:swatchY2;
-        if(rowY>PH-50){doc.addPage();swatchY1=MY;swatchY2=MY;}
         const{r:rr,g:gg,b:bb}=hexToRgb(hex);
         doc.setFillColor(rr,gg,bb);doc.rect(swatchX,rowY,12,9,'F');
         doc.setDrawColor(150,150,150);doc.setLineWidth(0.3);doc.rect(swatchX,rowY,12,9,'S');
@@ -2662,18 +2654,27 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
       // Arrows: one entry per unique colour
       arr.forEach(function(a){if(a.color)addColour(a.color,'Arrows');});
       (st.symbols||[]).forEach(function(sym,si){if(sym.color)addColour(sym.color,'Symbol '+(si+1));});
-      y=Math.max(swatchY1,swatchY2)+6;
+      y=Math.max(swatchY1,swatchY2)+8;
 
-      // ── Footer strip ── real logo (NN_Logo_WithTagline_Linen_4x.png)
+      // ── Footer strip — on current page (page 1 or 2 if threads overflowed) ──
+      // jsPDF draws on the current page; after a doc.addPage() inside addColour,
+      // the current page is already page 2, so footer and pitch land there correctly.
       const FTR_H=20;
       doc.setFillColor(240,230,211);
       doc.rect(0,PH-FTR_H,PW,FTR_H,'F');
-      // Logo image: 2580x780px source, rendered at 46x14pt, vertically centred in strip
-      // NN_LOGO_LINEN defined in app-logos.js
       doc.addImage(NN_LOGO_LINEN,'PNG',MX,PH-FTR_H+3,46,14,undefined,'FAST');
       doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(102,102,102);
       doc.text(new Date().toISOString().slice(0,10),PW/2,PH-6,{align:'center'});
       doc.text('nutmegneedle.com',PW-MX,PH-6,{align:'right'});
+
+      // ── Pitch image — fills remaining space above footer on current page ──
+      const pitchAvailH=Math.max(80,(PH-FTR_H-8)-y);
+      const naturalPitchH=Math.round(usableW*bh/bw);
+      const pitchH=Math.min(naturalPitchH,pitchAvailH);
+      const pitchW=Math.round(pitchH*bw/bh);
+      const pitchX=MX+Math.round((usableW-pitchW)/2);
+      doc.addImage(pitchImg,'PNG',pitchX,y,pitchW,pitchH,undefined,'FAST');
+
       doc.save('tactics-board-'+new Date().toISOString().slice(0,10)+'.pdf');
     };
     img.src=svgUrl;

@@ -117,8 +117,7 @@ Build order is now: `app-utils.js`, `app-core.js`, `app-logos.js`, `app-export.j
 
 **Priority:** P2  
 **Confidence:** MEDIUM — location confirmed, dependencies need verification  
-**Status:** [ ]  
-**NEEDS INVESTIGATION:** Upload both `app-core.js` and `app-export.js` to verify no hidden dependencies before implementing
+**Status:** [x] Done -- 2026-05-17
 
 **Background:**  
 The following functions are in `app-export.js` but have nothing to do with export:
@@ -172,8 +171,7 @@ As a developer working on the Game Tracker, I want UI primitive components to li
 
 **Priority:** P3  
 **Confidence:** MEDIUM — pattern observed, full call graph not yet verified  
-**Status:** [ ]  
-**NEEDS INVESTIGATION:** Upload `app-core.js` to confirm no caller passes distinct arguments
+**Status:** [x] Done -- 2026-05-17
 
 **Background:**  
 Four functions appear to be near-identical:
@@ -291,6 +289,7 @@ Stories that cannot be planned or sized until files are uploaded and read.
 - **GT-001** · Extract base64 logos from app-export.js -- 2026-05-17
 - **GT-002** · Investigation: app-core.js split feasibility -- 2026-05-17
 - **GT-003** · Extract pure utilities into app-utils.js -- 2026-05-17
+- **GT-010** · Move AI helpers from app-export.js to app-core.js -- 2026-05-17
 - **GT-020** · Consolidate redundant delete functions -- 2026-05-17
 - **GT-021** · Extract marker half-size into markerHalf() helper -- 2026-05-17
 - **GT-011** · Move UI primitives to app-ui.js -- 2026-05-17

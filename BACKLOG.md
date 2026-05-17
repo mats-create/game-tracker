@@ -200,14 +200,49 @@ As a developer maintaining the Game Tracker, I want redundant delete functions c
 
 ---
 
+
+---
+
+### GT-021 · Extract repeated marker half-size expression into a helper function
+
+**Priority:** P3  
+**Confidence:** HIGH -- pattern fully mapped, three call sites confirmed  
+**Status:** [ ]
+
+**Background:**  
+The expression `MSIZES[st.markerSize||'m']||Math.round(st.pR*1.4)` is repeated verbatim in three places inside `app-core.js`:
+
+- `hitPhaseMarker()` -- line ~211
+- `drawPhaseMarkers()` -- line ~566
+- Multi-select outline drawing -- line ~885 (with a `+5` offset that is currently implicit)
+
+This is the pattern discussed as "updating markers in multiple places". If marker sizing logic ever changes, all three must be updated consistently. Currently the `+5` selection offset in the third case is easy to miss.
+
+**User story:**  
+As a developer maintaining the Game Tracker, I want marker size computed in one place so that changing marker sizing behaviour requires a single edit rather than hunting across three call sites.
+
+**Proposed helper (goes in app-utils.js):**
+```js
+function markerHalf(st, extra) {
+  return (MSIZES[st.markerSize||'m'] || Math.round(st.pR*1.4)) + (extra||0);
+}
+```
+
+**Acceptance criteria:**
+- [ ] A `markerHalf(st, extra)` helper is added to `app-utils.js`
+- [ ] All three inline expressions replaced with `markerHalf(st)` or `markerHalf(st, 5)` as appropriate
+- [ ] No change to visual behaviour -- marker sizes are identical before and after
+- [ ] No change to hit testing behaviour
+
+**Notes:**  
+Can be implemented in the same session as GT-020 -- both touch `app-core.js` only (plus `app-utils.js` for the helper). Upload both files together.
+
 ## Investigation queue
 
 Stories that cannot be planned or sized until files are uploaded and read.
 
 | ID | What needs investigating | Files needed |
 |----|--------------------------|--------------|
-| GT-002 | Can app-core.js be split? | app-core.js |
-| GT-010 | AI helper dependencies | app-core.js, app-export.js |
 | GT-011 | UI primitive dependencies | app-core.js, app-ui.js |
 | GT-020 | Delete function call graph | app-core.js |
 
@@ -229,3 +264,4 @@ Stories that cannot be planned or sized until files are uploaded and read.
 | 2026-05-17 | GT-001 implemented -- app-export.js reduced from 278KB to 50KB |
 | 2026-05-17 | GT-002 investigation complete -- feasibility confirmed, GT-003 created |
 | 2026-05-17 | GT-003 implemented -- app-core.js reduced from 111KB to 83KB |
+| 2026-05-17 | GT-021 added -- marker half-size helper refactor identified |

@@ -1,142 +1,154 @@
-# Nutmeg&Needle Game Tracker — Project Brief
+# Nutmeg&Needle — Game Tracker BRIEF
 
-## Overview
-Football tactics board PWA for Nutmeg&Needle. Generates interactive pitch diagrams that export as embroidery SVG patterns and PDF instruction sheets. Built as a multi-file app, auto-built via GitHub Actions and hosted on GitHub Pages.
+This file is read at the start of every Claude conversation.
+It is the single source of truth for project context, constraints, and current status.
+
+---
+
+## What this app is
+
+A football tactics board web app for Nutmeg&Needle. Users can:
+- Place and move players on a pitch
+- Draw arrows, add symbols, place move markers
+- Generate tactical moments using AI (Anthropic API)
+- Save and load boards via Firebase Firestore
+- Export as PDF, colour SVG, or embroidery SVG
 
 **Live app:** https://mats-create.github.io/game-tracker/
 **Repo:** https://github.com/mats-create/game-tracker
 
 ---
 
-## Architecture
+## File structure
 
-### Source files (edit these only — never index.html)
-| File | Role |
-|---|---|
-| `src/app-core.js` | Canvas rendering, board state, all drawing logic |
-| `src/app-export.js` | SVG and PDF export — independent rendering pipeline |
-| `src/app-ui.js` | React UI components, controls, panels |
-| `src/shell.html` | HTML shell, script loading, manifest link |
+The app is split across four files. **Edit only the `src/` files — never `index.html` directly.**
 
-### Build
-GitHub Actions auto-builds `src/` into `index.html` on push to main. Never edit `index.html` directly.
-
-### Stack
-React 18 via CDN, Babel standalone (`data-presets="react"`), jsPDF, Canvas API, Anthropic API (AI moment generation), Firebase (Auth + Firestore + Hosting — planned migration).
-
----
-
-## Board State
-All board state lives in `useRef(S)`. Serialised via `boardState()` / `applyBoardState()`. Never use `useState` for canvas-rendered state — stale closure bugs will result.
-
-### State fields
-| Field | Type | Notes |
+| File | Contents | Size |
 |---|---|---|
-| `players` | `Player[]` | x, y, num, name, team, ghost, hidden |
-| `arrows` | `Arrow[]` | style, shape, color, points |
-| `phases` | `Phase[]` | label, note, markers[], defaultEvent. Markers have x, y, eventType |
-| `phaseColor` | string | Hex color for all step markers and legend badge |
-| `balls` | `Ball[]` | x, y, ghost |
-| `colorA/colorB` | string | Team jersey hex colors |
-| `edgeColorA/edgeColorB` | string | Team ring/trim hex colors |
-| `teamNameA/teamNameB` | string | Display names for each team |
-| `arrowColor` | string | Current arrow color |
-| `arrowHeadSize` | s/m/l | Current arrowhead size key |
-| `arrowStyle` | solid/dashed/wave | Current arrow line style |
-| `arrowShape` | straight/curve/elbow/free | Current arrow shape |
-| `view` | full/left/right | Pitch view mode |
-| `pR` | number | Player radius (from PSIZES) |
-| `markerSize` | xs/s/m/l | Step marker size key (auto-syncs with pR tier) |
-| `labelContrast` | normal/outline/dark | Player number rendering mode |
-| `activePh` | number | Index of active phase for marker placement |
-| `legend` | {x, y, scale} | Player legend position and scale |
-| `stepLegend` | {x, y, scale} | Step legend position and scale |
-| `selectedArrowIdx` | number/null | Currently selected arrow index |
-| `selectedBallIdx` | number/null | Currently selected ball index |
-| `selectedPhaseMarker` | {phaseIdx, markerIdx}/null | Currently selected step marker |
+| `src/app-core.js` | Constants, canvas draw functions, TacticsBoard component body | ~105KB |
+| `src/app-export.js` | SVG helpers, exportPDF, exportSVG | ~270KB |
+| `src/app-ui.js` | PlayerPanel, JSX render tree, root.render | ~64KB |
+| `src/shell.html` | HTML shell with CDN tags and Firebase init | ~3KB |
+
+`index.html` is **auto-built** from these files by GitHub Actions every time a `src/` file is pushed. Do not edit it manually.
 
 ---
 
-## Player & Marker Sizes
-```
-PSIZES: xs=7, s=10, m=14, l=19  (radius in px)
-```
+## How sessions work
 
-### Font size formulas (current)
-| Element | Formula |
+### Starting a session
+Tell Claude which file you are working on and what the task is. Upload the relevant `src/` file(s) from GitHub.
+
+**For most tasks, only one file is needed:**
+- UI panels, controls, player list, button styles → upload `src/app-ui.js`
+- Canvas drawing, board logic, AI, Firebase, zoom/pan → upload `src/app-core.js`
+- PDF export, SVG export → upload `src/app-export.js`
+- Pure utilities (colours, geometry, draw helpers) → upload `src/app-utils.js`
+- Not sure? Upload the relevant files -- all are under 100KB
+
+**Example session opener:**
+> "Today's task: [describe what you want to do]. Here is the file: [upload file]"
+
+### During a session
+- Claude makes all code changes — Mats never edits code directly
+- Claude delivers the complete updated file
+- Mats downloads the updated file and uploads it to GitHub to replace the existing one
+
+### Uploading a file back to GitHub
+1. Go to the file in the repo (e.g. `src/app-ui.js`)
+2. Click the pencil (edit) icon
+3. Select all → paste the new content
+4. Commit with a short message describing the change
+
+Or drag the file onto the repo's main page if GitHub allows it.
+
+### After a session
+- Ask Claude to update the **Current status** section below
+- Commit the updated BRIEF.md to GitHub
+
+### One conversation = one task
+Planning conversations (no file needed) are cheap and useful.
+Build conversations (with file uploads) should focus on one task only.
+
+---
+
+## Technical constraints — must always be respected
+
+These are hard rules. Breaking any of them silently breaks the app.
+
+- **No optional chaining (`?.`) or nullish coalescing (`??`)** — Babel standalone with `data-presets="react"` does not support them. Use explicit `&&` guard chains instead.
+- **No `ctx.roundRect()`** — not universally supported. Use `roundRectPath()` helper instead.
+- **No backticks in comments** — breaks Babel parsing.
+- **Single top-level component** — one `TacticsBoard` function + `root.render`. Never split into multiple top-level components.
+- **All board state in `useRef(S)`** — never `useState` for board state. Stale closures will silently break canvas rendering.
+- **Canvas `ctx.save()`/`ctx.restore()` balance** — imbalance causes zoom transform to break. Use explicit `ctx.setTransform` before phase markers section.
+- **Event icons for step markers** — must use pure canvas path geometry (no emoji) so they render in SVG and PDF exports.
+
+---
+
+## UI style
+
+Material Design 3 (MD3) principles:
+- MD3 colour tokens: surface / on-surface / primary / secondary
+- Card elevation via borders (not shadows)
+- Button variants: filled, tonal, outlined
+- Typography: Inter only (400/700; 500 for UI subheadings), 14sp body / 12sp label
+- 8px grid, sentence case always
+- No ripple/animation
+- Canvas area is untouched by MD3 styling
+
+---
+
+## Brand constraints — always apply
+
+- Inter only — never any other font
+- Never coral adjacent to green as foreground text — always a neutral between them
+- No coral as large background fill
+- Kit naming always "The [Move Name]"
+- Banned words: artisan, bespoke, curated, exclamation marks
+- Voice: knowing, dry wit, craft-proud, inclusive, concise
+
+**Palette:**
+
+| Token | Hex |
 |---|---|
-| Player numbers (canvas + SVG) | `Math.max(9, Math.round(r * 1.1))` |
-| Phase marker labels (canvas) | `Math.max(7, Math.round(half * 1.3))` |
-| Step legend mini-markers (canvas) | `Math.max(5, Math.round(br * 0.9))` |
-| Legend dot numbers (SVG) | `Math.max(8, Math.round(dr * 1.2))` |
+| Pitch black | #1A1A1A |
+| Coral (light) | #CC3300 |
+| Coral (dark) | #FF6633 |
+| Pitch green | #4A6741 |
+| Linen | #F0E6D3 |
+| Off white | #F5F5F5 |
+| Mid grey | #666666 |
 
-### Optical centering
-Canvas marker labels use a `+Math.round(fontSize * 0.06)` y-nudge for optical vertical centering. SVG text elements use `dy="0.36em"` instead of `dominant-baseline="middle"` (more reliable across renderers). `Inter,sans-serif` used everywhere for consistency with the app font.
-
----
-
-## Key Technical Constraints
-- No optional chaining (`?.`) or nullish coalescing (`??`) — Babel standalone limitation
-- No `ctx.roundRect()` — use `roundRectPath()` helper
-- No backtick characters in comments
-- All board state in `useRef(S)` — never `useState` for canvas state
-- `ctx.save()` / `ctx.restore()` balance is critical — use `ctx.setTransform` explicitly before phase marker sections rather than relying on save/restore balance
-- `useState` must never be called inside IIFEs within JSX render
-- Event icons for step markers use pure canvas path geometry (no emoji) — shared `eventIconSVGPath()` function at module scope serves both canvas and SVG export
-- Exports (SVG/PDF) work from serialised state alone, no canvas dependency
-- Single top-level React component
+**DMC threads:** Noir (310), Linen (3866), Pitch (3362), Coral (350), Ash (646), White (blanc)
 
 ---
 
-## Export Pipeline
-`app-export.js` has its own independent SVG string-building code. Font sizes and rendering logic are **duplicated** from `app-core.js` — when changing rendering in one file, always check the other.
+## Current status
 
-**Known technical debt:** The duplicated sizing logic between `app-core.js` and `app-export.js` should be refactored into shared pure helper functions (e.g. `playerNumFontSize(r)`, `markerLabelSize(half)`, `legendDotNumSize(dr)`), defined once and called from both files. Not urgent but should be done before the next round of rendering changes.
-
----
-
-## Brand
-- **Palette:** #1A1A1A Pitch black · #CC3300 Coral · #4A6741 Pitch green · #F0E6D3 Linen · #F5F5F5 Off white · #666666 Mid grey
-- **Thread system:** Noir DMC310 · Linen DMC3866 · Pitch DMC3362 · Coral DMC350 · Ash DMC646 · White DMCblanc
-- **Font:** Inter only (400/700; 500 for UI subheadings only)
-- **Voice:** knowing, dry wit, craft-proud, inclusive, concise
-- **Banned words:** artisan, bespoke, curated. No exclamation marks. Sentence case always.
+**Last updated:** 2026-05-17
+**Last completed:** Technical backlog created — first-iteration investigation of file sizes, code organisation, and dead code. `BACKLOG.md` added to repo.
+**Current state:** Fully functional. Firebase Auth + Firestore board library, PWA manifest, GitHub Pages hosting, auto-build pipeline. Way of working fully established.
+**Known issues:** None
+**Next task:** Work through `BACKLOG.md` — start with GT-001 (extract base64 logos from app-export.js). Upload `app-export.js` to begin.
 
 ---
 
-## Completed Work
+## Work log
 
-### Session — May 2026 (readability + centering)
-- **Player number font size:** increased scalar from `r*0.85` to `r*1.1` in both `app-core.js` and `app-export.js`. At M size (r=14) this takes numbers from 43% to 54% of circle diameter — readable on screen and stitch-worthy at small physical sizes.
-- **Marker label optical centering:** fixed vertical positioning of phase marker letters (A, B, C…) on pitch canvas and in SVG/PDF exports. Canvas uses `+0.06em` y-nudge; SVG uses `dy="0.36em"` replacing unreliable `dominant-baseline="middle"`. `Inter,sans-serif` applied consistently everywhere.
-- **Player number centering in SVG exports:** same `dy="0.36em"` fix applied to all player number `<text>` elements in `app-export.js` — pitch players (normal + ghost), legend dot numbers, and pattern PDF ghost players.
-
-### Earlier sessions
-- Interactive pitch canvas with zoom/pan, draggable players and arrows
-- Step/phase markers with event icons, ghost players, visibility toggles
-- Editable jersey numbers and team names
-- AI-powered moment generation (Anthropic API)
-- JSON save/load (4 slots)
-- Colour SVG export, layered embroidery SVG (A4 landscape, Inkscape-compatible)
-- PDF embroidery instructions sheet with DMC thread suggestions
-- Full arrow system: solid/dashed/wave styles, straight/curve/elbow/free shapes, configurable arrowhead size and colour
+| Date | Task | Outcome |
+|---|---|---|
+| 2026-05-13 | Workflow restructure | GitHub as source of truth, BRIEF.md established |
+| 2026-05-13 | Ways of working | File-split plan created |
+| 2026-05-13 | File split | App split into src/ files, auto-build pipeline working |
+| 2026-05-17 | Way of working finalised | Download/upload file workflow confirmed, session checklist created |
+| 2026-05-17 | Technical investigation | First-iteration backlog created, BACKLOG.md added to repo |
 
 ---
 
-## Known Issues
-None.
+## End of session checklist
 
----
-
-## Next Steps
-- Review outstanding feature backlog and prioritise
-- Firebase migration (build order): Auth → Firestore library → Library UI → Web App Manifest → Firebase Hosting → Headless export
-- Shopify store setup
-
----
-
-## Working Method
-- Always upload the full source file; Claude delivers the complete updated file for GitHub paste
-- Investigate and plan before executing on complex features
-- Edit only `src/` files — never `index.html`
-- Commit message format: short imperative description of what changed and why
+- [ ] Claude delivers updated `src/` file(s)
+- [ ] Upload updated file(s) to GitHub
+- [ ] Ask Claude to update Current status section in BRIEF.md
+- [ ] Upload updated BRIEF.md to GitHub

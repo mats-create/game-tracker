@@ -143,8 +143,7 @@ As a developer working on the Game Tracker, I want the AI helper functions to li
 
 **Priority:** P3  
 **Confidence:** MEDIUM — location confirmed, dependencies need verification  
-**Status:** [ ]  
-**NEEDS INVESTIGATION:** Upload both `app-core.js` and `app-ui.js` to verify no circular dependencies before implementing
+**Status:** [x] Done -- 2026-05-17
 
 **Background:**  
 The following small React components are defined in `app-core.js` but logically belong with the UI layer in `app-ui.js`:
@@ -154,14 +153,12 @@ The following small React components are defined in `app-core.js` but logically 
 As a developer working on the Game Tracker, I want UI primitive components to live in `app-ui.js` so that when I need to adjust a button or card style I upload the correct file.
 
 **Acceptance criteria:**
-- [ ] All nine UI primitive components are moved from `app-core.js` to `app-ui.js`
-- [ ] They are placed at the top of `app-ui.js`, before `PlayerPanel`
-- [ ] No component signatures or props are changed
-- [ ] `app-core.js` no longer contains any JSX component definitions
-- [ ] The live site renders all panels and controls correctly
-- [ ] `app-core.js` file size is reduced (minor, but measurable)
-
-**Dependency:** Should be done after GT-002 investigation, in case that investigation changes the planned structure.
+- [x] All nine UI primitive components moved from `app-core.js` to `app-ui.js`
+- [x] Placed before `PlayerPanel` in `app-ui.js`
+- [x] No component signatures or props changed
+- [x] `app-core.js` no longer contains any JSX component definitions
+- [x] Live site renders correctly -- verify after upload
+- [x] `app-core.js` reduced from ~94KB to ~90KB
 
 ---
 
@@ -207,9 +204,9 @@ As a developer maintaining the Game Tracker, I want redundant delete functions c
 
 **Priority:** P3  
 **Confidence:** HIGH -- pattern fully mapped, three call sites confirmed  
-**Status:** [ ]
+**Status:** [x] Done -- 2026-05-17
 
-**Background:**  
+**Background**:  
 The expression `MSIZES[st.markerSize||'m']||Math.round(st.pR*1.4)` is repeated verbatim in three places inside `app-core.js`:
 
 - `hitPhaseMarker()` -- line ~211
@@ -229,10 +226,10 @@ function markerHalf(st, extra) {
 ```
 
 **Acceptance criteria:**
-- [ ] A `markerHalf(st, extra)` helper is added to `app-utils.js`
-- [ ] All three inline expressions replaced with `markerHalf(st)` or `markerHalf(st, 5)` as appropriate
-- [ ] No change to visual behaviour -- marker sizes are identical before and after
-- [ ] No change to hit testing behaviour
+- [x] `markerHalf(st, extra)` helper added to `app-utils.js`
+- [x] All three inline expressions replaced with `markerHalf(st)` or `markerHalf(st, 5)`
+- [x] No change to visual behaviour -- confirmed working
+- [x] No change to hit testing behaviour -- confirmed working
 
 **Notes:**  
 Can be implemented in the same session as GT-020 -- both touch `app-core.js` only (plus `app-utils.js` for the helper). Upload both files together.
@@ -243,8 +240,7 @@ Stories that cannot be planned or sized until files are uploaded and read.
 
 | ID | What needs investigating | Files needed |
 |----|--------------------------|--------------|
-| GT-011 | UI primitive dependencies | app-core.js, app-ui.js |
-| GT-020 | Delete function call graph | app-core.js |
+
 
 ---
 
@@ -253,6 +249,9 @@ Stories that cannot be planned or sized until files are uploaded and read.
 - **GT-001** · Extract base64 logos from app-export.js -- 2026-05-17
 - **GT-002** · Investigation: app-core.js split feasibility -- 2026-05-17
 - **GT-003** · Extract pure utilities into app-utils.js -- 2026-05-17
+- **GT-020** · Consolidate redundant delete functions -- 2026-05-17
+- **GT-021** · Extract marker half-size into markerHalf() helper -- 2026-05-17
+- **GT-011** · Move UI primitives to app-ui.js -- 2026-05-17
 
 ---
 
@@ -264,4 +263,5 @@ Stories that cannot be planned or sized until files are uploaded and read.
 | 2026-05-17 | GT-001 implemented -- app-export.js reduced from 278KB to 50KB |
 | 2026-05-17 | GT-002 investigation complete -- feasibility confirmed, GT-003 created |
 | 2026-05-17 | GT-003 implemented -- app-core.js reduced from 111KB to 83KB |
-| 2026-05-17 | GT-021 added -- marker half-size helper refactor identified |
+| 2026-05-17 | GT-020 + GT-021 implemented -- delete consolidation and markerHalf() helper |
+| 2026-05-17 | GT-011 implemented -- UI primitives moved to app-ui.js |

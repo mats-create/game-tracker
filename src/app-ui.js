@@ -1,6 +1,47 @@
 // app-ui.js — PlayerPanel sub-component, JSX render tree, root.render
 // Nutmeg&Needle Game Tracker — edit this file,  not index.html
 
+// ─── UI PRIMITIVES (moved from app-core.js) ─────────────────────────────────
+function Card({children,style}){return <div style={{background:C.card,border:`0.5px solid ${C.cardBorder}`,borderRadius:14,padding:'12px 14px',marginBottom:8,...style}}>{children}</div>;}
+function Hint({children,style}){return <div style={{fontSize:11,color:C.textMuted,lineHeight:1.55,marginTop:6,...style}}>{children}</div>;}
+function Row({children,style}){return <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center',...style}}>{children}</div>;}
+function ModeBtn({active,onClick,emoji,label,title}){
+  return <button onClick={onClick} title={title} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4,padding:'10px 12px',minWidth:72,height:64,cursor:'pointer',borderRadius:12,border:active?`2px solid ${C.activeBorder}`:`1.5px solid ${C.cardBorder}`,background:active?C.activeBg:'#FAFAF8',color:active?C.activeText:C.textMid,boxShadow:active?`0 0 0 3px rgba(204,51,0,0.12)`:'none'}}>
+    <span style={{fontSize:22,lineHeight:1}}>{emoji}</span>
+    <span style={{fontSize:10,fontWeight:active?600:400,letterSpacing:0.2}}>{label}</span>
+  </button>;
+}
+function ToggleBtn({active,onClick,children,title}){
+  return <button onClick={onClick} title={title} style={{fontSize:12,padding:'4px 10px',height:28,cursor:'pointer',borderRadius:7,border:active?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:active?C.activeBg:'transparent',color:active?C.activeText:C.textMid,fontWeight:active?500:400}}>{children}</button>;
+}
+function ActionBtn({onClick,children,disabled,danger}){
+  return <button onClick={onClick} disabled={disabled} style={{fontSize:12,padding:'6px 14px',height:30,cursor:disabled?'default':'pointer',borderRadius:8,border:'none',background:disabled?'#E5E5EA':danger?C.red:C.blue,color:disabled?C.textMuted:'#fff',fontWeight:500,opacity:disabled?0.6:1}}>{children}</button>;
+}
+function GhostBtn({onClick,children,disabled,active}){
+  return <button onClick={onClick} disabled={disabled} style={{fontSize:11,padding:'3px 9px',height:26,cursor:disabled?'default':'pointer',borderRadius:6,border:active?`1.5px solid ${C.activeBorder}`:`0.5px solid ${C.inputBorder}`,background:active?C.activeBg:'transparent',color:active?C.activeText:C.textMuted}}>{children}</button>;
+}
+function InfoBar({icon,text,children}){
+  return <div style={{marginTop:8,padding:'8px 12px',background:C.blueLight,borderRadius:10,border:`1px solid ${C.blueBorder}`,display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+    {icon&&<span style={{fontSize:16}}>{icon}</span>}
+    <span style={{fontSize:11,color:C.activeText,flex:1}}>{text}</span>
+    {children}
+  </div>;
+}
+function Collapsible({label,badge,children,defaultOpen,accentColor}){
+  const [open,setOpen]=useState(defaultOpen||false);
+  const bg=accentColor?accentColor.bg:C.card;
+  const border=accentColor?`1px solid ${accentColor.border}`:`0.5px solid ${C.cardBorder}`;
+  const labelColor=accentColor?accentColor.text:C.text;
+  return <div style={{marginBottom:6}}>
+    <button onClick={()=>setOpen(o=>!o)} style={{display:'flex',alignItems:'center',width:'100%',padding:'9px 12px',cursor:'pointer',background:bg,border,borderRadius:open?'12px 12px 0 0':12,fontSize:12,fontWeight:500,color:labelColor,textAlign:'left',gap:8}}>
+      <span style={{flex:1}}>{label}</span>
+      {badge!=null&&<span style={{fontSize:10,background:'#F0F0EB',borderRadius:10,padding:'1px 7px',color:C.textMuted}}>{badge}</span>}
+      <span style={{fontSize:11,color:accentColor?accentColor.text:C.textMuted}}>{open?'▲':'▼'}</span>
+    </button>
+    {open&&<div style={{background:bg,border,borderTop:'none',borderRadius:'0 0 12px 12px',padding:'12px 14px'}}>{children}</div>}
+  </div>;
+}
+
 // ─── PLAYER PANEL SUB-COMPONENT ───────────────────────────────────────────
   function PlayerPanel(){
     const st=S.current,team=activeTeam;

@@ -8,7 +8,8 @@ Usage:
 
 Build order:
     src/shell.html      HTML shell with <!-- BABEL_CONTENT_PLACEHOLDER -->
-    src/app-core.js     Constants, canvas, TacticsBoard body
+    src/app-utils.js    Pure utility functions and constants (no React dependency)
+    src/app-core.js     UI primitives, TacticsBoard component body
     src/app-logos.js    Base64 logo constants used by exportPDF
     src/app-export.js   SVG helpers, exportPDF, exportSVG
     src/app-ui.js       PlayerPanel, JSX render tree, root.render
@@ -20,12 +21,13 @@ import sys
 SRC_DIR = "src"
 OUTPUT = "index.html"
 SHELL = os.path.join(SRC_DIR, "shell.html")
-PARTS = ["app-core.js", "app-logos.js", "app-export.js", "app-ui.js"]
+PARTS = ["app-utils.js", "app-core.js", "app-logos.js", "app-export.js", "app-ui.js"]
 PLACEHOLDER = "<!-- BABEL_CONTENT_PLACEHOLDER -->"
 
 # Sanity checks -- things that must be present in each file
 REQUIRED = {
-    "app-core.js":   ["useState", "function TacticsBoard"],
+    "app-utils.js":  ["const W=", "function phaseLabel", "function hexToRgb"],
+    "app-core.js":   ["function TacticsBoard", "function Card"],
     "app-logos.js":  ["NN_LOGO_REV", "NN_LOGO_LINEN"],
     "app-export.js": ["function pitchSVGLines", "function exportPDF"],
     "app-ui.js":     ["function PlayerPanel", "root.render"],
@@ -35,7 +37,7 @@ REQUIRED = {
 def build():
     # Read shell
     if not os.path.exists(SHELL):
-        _fail(f"{SHELL} not found. Have you run split_clean.py yet?")
+        _fail(f"{SHELL} not found.")
 
     with open(SHELL, encoding="utf-8") as f:
         shell = f.read()

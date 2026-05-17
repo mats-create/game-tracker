@@ -27,12 +27,11 @@ PLACEHOLDER = "<!-- BABEL_CONTENT_PLACEHOLDER -->"
 # Sanity checks -- things that must be present in each file
 REQUIRED = {
     "app-utils.js":  ["const W=", "function phaseLabel", "function hexToRgb"],
-    "app-core.js":   ["function TacticsBoard", "function Card"],
+    "app-core.js":   ["function TacticsBoard"],
     "app-logos.js":  ["NN_LOGO_REV", "NN_LOGO_LINEN"],
     "app-export.js": ["function pitchSVGLines", "function exportPDF"],
-    "app-ui.js":     ["function PlayerPanel", "root.render"],
+    "app-ui.js":     ["function Card", "function PlayerPanel", "root.render"],
 }
-
 
 def build():
     # Read shell

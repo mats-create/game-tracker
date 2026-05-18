@@ -789,64 +789,20 @@ function TacticsBoard(){
     ctx.restore();
   }
 
-  // ─── DRAW: MOMENT STRIP ──────────────────────────────────────────────────
+  // ─── DRAW: MOMENT WATERMARK ─────────────────────────────────────────────
   function drawMoment(ctx,moment){
     if(!moment)return;
-    const fields=['what','event','at','when','who'];
-    const fieldLabels={what:'WHAT',event:'EVENT',at:'AT',when:'WHEN',who:'WHO'};
-    const hasHeading=moment.heading&&moment.heading.trim();
-    const supportFields=fields.filter(function(f){return moment[f]&&moment[f].trim();});
-    if(!hasHeading&&supportFields.length===0)return;
-    const padX=14,padY=10,headingFs=14,labelFs=8,bodyFs=11,headingLineH=18,bodyLineH=14,labelGap=3,fieldGap=6;
-    const accentW=3;
-    const maxW=W-padX*2-accentW-6;
+    const heading=(moment.heading&&moment.heading.trim())||'';
+    const event=(moment.event&&moment.event.trim())||'';
+    const wmText=heading&&event?heading+' — '+event:(heading||event);
+    if(!wmText)return;
     ctx.save();
-    ctx.font='bold '+headingFs+'px Inter,sans-serif';
-    const headingLines=hasHeading?wrapText(ctx,moment.heading.trim(),maxW):[];
-    ctx.font=bodyFs+'px Inter,sans-serif';
-    // Measure total strip height
-    var contentH=0;
-    if(headingLines.length>0)contentH+=headingLines.length*headingLineH+(supportFields.length>0?8:0);
-    supportFields.forEach(function(f){
-      var lines=wrapText(ctx,moment[f].trim(),maxW);
-      contentH+=labelFs+labelGap+lines.length*bodyLineH+fieldGap;
-    });
-    const stripH=padY*2+14+contentH; // 14 = header bar row height
-    const stripY=H-stripH-2;
-    const tx=padX+accentW+6;
-    // Linen card background
-    ctx.fillStyle='#F0E6D3';
-    ctx.fillRect(0,stripY,W,stripH+2);
-    // Coral left accent bar
-    ctx.fillStyle='#CC3300';
-    ctx.fillRect(0,stripY,accentW,stripH+2);
-    // Header bar row label
-    ctx.font='bold '+labelFs+'px Inter,sans-serif';
-    ctx.fillStyle='#CC3300';
-    ctx.textAlign='left';ctx.textBaseline='alphabetic';
-    ctx.fillText('MEMORABLE MOMENT',tx,stripY+padY+labelFs);
-    // Content below header row
-    var y=stripY+padY+14+padY;
-    // Heading
-    if(headingLines.length>0){
-      ctx.font='bold '+headingFs+'px Inter,sans-serif';
-      ctx.fillStyle='#1A1A1A';
-      headingLines.forEach(function(line){ctx.fillText(line,tx,y);y+=headingLineH;});
-      if(supportFields.length>0)y+=8;
-    }
-    // Field rows: coral caps label then body text
-    ctx.font=bodyFs+'px Inter,sans-serif';
-    supportFields.forEach(function(f){
-      ctx.font='bold '+labelFs+'px Inter,sans-serif';
-      ctx.fillStyle='#CC3300';
-      ctx.fillText(fieldLabels[f],tx,y);
-      y+=labelFs+labelGap;
-      ctx.font=bodyFs+'px Inter,sans-serif';
-      ctx.fillStyle='#323230';
-      var lines=wrapText(ctx,moment[f].trim(),maxW);
-      lines.forEach(function(line){ctx.fillText(line,tx,y);y+=bodyLineH;});
-      y+=fieldGap;
-    });
+    ctx.globalAlpha=0.55;
+    ctx.font='400 14px Inter,Helvetica,sans-serif';
+    ctx.fillStyle='#666666';
+    ctx.textAlign='right';
+    ctx.textBaseline='bottom';
+    ctx.fillText(wmText,W-24,H-16);
     ctx.restore();
   }
 
@@ -917,6 +873,7 @@ function TacticsBoard(){
     ctx.setTransform(scale,0,0,scale,ox,oy);
     drawPitch(ctx,v);
     if(st.showGrid)drawGrid(ctx);
+    drawMoment(ctx,st.moment);
     drawCropLayer(ctx,st.cropRegion,scale);
     drawArrows(ctx,arr,selA,hs);
     // Defensive transform reset — arrow helpers can shift the matrix
@@ -947,7 +904,6 @@ function TacticsBoard(){
       ctx.setLineDash([]);ctx.restore();
     });
     drawLegends(ctx,st,cA,cB,ph,phaseColor);
-    drawMoment(ctx,st.moment);
     ctx.setTransform(1,0,0,1,0,0);
     drawScreenOverlays(ctx,scale,ox,oy);
   }

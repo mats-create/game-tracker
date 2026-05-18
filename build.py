@@ -8,11 +8,11 @@ Usage:
 
 Build order:
     src/shell.html      HTML shell with <!-- BABEL_CONTENT_PLACEHOLDER -->
-    src/app-utils.js    Pure utility functions and constants (no React dependency)
-    src/app-core.js     UI primitives, TacticsBoard component body
+    src/app-utils.js    Pure utilities, constants, UI primitives, PlayerPanel
+    src/app-core.js     TacticsBoard component body (board logic, draw, Firebase)
     src/app-logos.js    Base64 logo constants used by exportPDF
     src/app-export.js   SVG helpers, exportPDF, exportSVG
-    src/app-ui.js       PlayerPanel, JSX render tree, root.render
+    src/app-ui.js       JSX render tree, root.render
 """
 
 import os
@@ -26,11 +26,12 @@ PLACEHOLDER = "<!-- BABEL_CONTENT_PLACEHOLDER -->"
 
 # Sanity checks -- things that must be present in each file
 REQUIRED = {
-    "app-utils.js":  ["const W=", "function phaseLabel", "function hexToRgb"],
+    "app-utils.js":  ["const W=", "function phaseLabel", "function hexToRgb",
+                      "function Card", "function Collapsible", "function PlayerPanel"],
     "app-core.js":   ["function TacticsBoard"],
     "app-logos.js":  ["NN_LOGO_REV", "NN_LOGO_LINEN"],
     "app-export.js": ["function pitchSVGLines", "function exportPDF"],
-    "app-ui.js":     ["function Card", "function PlayerPanel", "root.render"],
+    "app-ui.js":     ["root.render"],
 }
 
 def build():

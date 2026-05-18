@@ -419,6 +419,10 @@
 
         {/* 2. Players */}
         <Collapsible label="Players" badge={`${st.players.filter(p=>!p.ghost).length} players`}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+            <span style={{fontSize:10,fontWeight:500,color:C.textMuted}}>NAMES</span>
+            <ToggleBtn active={st.showNames!==false} onClick={()=>{S.current.showNames=!(st.showNames!==false);redraw();}}>Show names</ToggleBtn>
+          </div>
           <PlayerPanel S={S} activeTeam={activeTeam} setActiveTeam={setActiveTeam} expandedId={expandedId} toggleExpanded={toggleExpanded} addGhost={addGhost} removeGhost={removeGhost} togglePlayerHidden={togglePlayerHidden} updatePlayerNum={updatePlayerNum} getGhosts={getGhosts} redraw={redraw}/>
         </Collapsible>
 
@@ -447,6 +451,14 @@
               <ToggleBtn active={st.labelContrast==='normal'}              onClick={()=>{S.current.labelContrast='normal';redraw();}}>Normal</ToggleBtn>
               <ToggleBtn active={(st.labelContrast||'outline')==='outline'} onClick={()=>{S.current.labelContrast='outline';redraw();}}>Outlined</ToggleBtn>
               <ToggleBtn active={st.labelContrast==='dark'}               onClick={()=>{S.current.labelContrast='dark';redraw();}}>Dark</ToggleBtn>
+            </Row>
+          </div>
+          <div style={{marginTop:8}}>
+            <div style={{fontSize:10,color:C.textMuted,marginBottom:4,fontWeight:500}}>PITCH COLOUR</div>
+            <Row style={{gap:4}}>
+              <ToggleBtn active={(st.pitchMode||'normal')==='normal'} onClick={()=>{S.current.pitchMode='normal';redraw();}}>Normal</ToggleBtn>
+              <ToggleBtn active={(st.pitchMode||'normal')==='aida'}   onClick={()=>{S.current.pitchMode='aida';redraw();}}>Aida</ToggleBtn>
+              <ToggleBtn active={(st.pitchMode||'normal')==='gray'}   onClick={()=>{S.current.pitchMode='gray';redraw();}}>Grayscale</ToggleBtn>
             </Row>
           </div>
           <div style={{marginTop:8}}>
@@ -589,6 +601,15 @@
                 ↓ Print — instructions
               </button>
               <Hint style={{marginTop:0}}>Pitch diagram + DMC thread colours + steps + player roster.</Hint>
+              <div style={{height:0.5,background:'rgba(0,0,0,0.07)',margin:'2px 0'}}/>
+              <button onClick={exportBoard} style={{fontSize:12,padding:'7px 10px',cursor:'pointer',borderRadius:8,border:`0.5px solid ${C.inputBorder}`,background:C.inputBg,color:C.text,fontWeight:500,textAlign:'left'}}>
+                ↓ Export JSON
+              </button>
+              <Hint style={{marginTop:0}}>Save full board state as a .json file.</Hint>
+              <button onClick={function(){importInputRef.current.click();}} style={{fontSize:12,padding:'7px 10px',cursor:'pointer',borderRadius:8,border:`0.5px solid ${C.inputBorder}`,background:C.inputBg,color:C.text,fontWeight:500,textAlign:'left'}}>
+                ↑ Import JSON
+              </button>
+              <Hint style={{marginTop:0}}>Load a board from a previously exported .json file.</Hint>
             </div>
           </div>
         </Collapsible>

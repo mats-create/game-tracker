@@ -19,7 +19,7 @@ function TacticsBoard(){
     arrowColor:'#F5F5F5',arrowStyle:'solid',arrowShape:'straight',arrowHeadSize:'m',
     view:'full',pR:14,markerSize:'m',ballSize:'m',activePh:0,labelContrast:'outline',
     multiSelection:[],
-    mode:'move',
+    mode:'move',showNames:true,pitchMode:'normal',
     cropRegion:null,cropSelected:false,
     moment:{heading:'',what:'',event:'',at:'',when:'',who:''},
     exportFormat:'a4',exportOrientation:'landscape',
@@ -235,7 +235,10 @@ function TacticsBoard(){
     const b=v==='left'?{x:0,w:W/2+CCR}:v==='right'?{x:W/2-CCR,w:W/2+CCR}:{x:0,w:W};
     ctx.save();
     if(v!=='full'){ctx.beginPath();ctx.rect(b.x,0,b.w,H);ctx.clip();}
-    for(let i=0;i<8;i++){ctx.fillStyle=i%2===0?'#3a7d44':'#2f6b38';ctx.fillRect(i*W/8,0,W/8,H);}
+    const pm=S.current.pitchMode||'normal';
+    const pc1=pm==='aida'?'#F5EFE0':pm==='gray'?'#555555':'#3a7d44';
+    const pc2=pm==='aida'?'#EDE5CE':pm==='gray'?'#444444':'#2f6b38';
+    for(let i=0;i<8;i++){ctx.fillStyle=i%2===0?pc1:pc2;ctx.fillRect(i*W/8,0,W/8,H);}
     ctx.strokeStyle=L;ctx.lineWidth=1.5;
     ctx.strokeRect(pad,pad,W-pad*2,H-pad*2);
     ctx.beginPath();ctx.moveTo(W/2,pad);ctx.lineTo(W/2,H-pad);ctx.stroke();
@@ -568,11 +571,19 @@ function TacticsBoard(){
       else if(contrast==='outline'){ctx.strokeStyle='rgba(0,0,0,0.88)';ctx.lineWidth=3;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle='#fff';ctx.fillText(p.num,p.x,p.y);}
       else if(contrast==='dark'){ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=2;ctx.lineJoin='round';ctx.strokeText(p.num,p.x,p.y);ctx.fillStyle='#111';ctx.fillText(p.num,p.x,p.y);}
       else{ctx.fillStyle='#fff';ctx.fillText(p.num,p.x,p.y);}
-      if(!isGhost&&p.name&&r>=14){
+      if(!isGhost&&p.name&&r>=14&&st.showNames!==false){
         const nameFs=Math.max(9,r-5);ctx.font=`${nameFs}px sans-serif`;
         if(contrast==='outline'){ctx.strokeStyle='rgba(0,0,0,0.6)';ctx.lineWidth=2;ctx.strokeText(p.name,p.x,p.y+r+10);ctx.fillStyle='rgba(255,255,255,0.95)';ctx.fillText(p.name,p.x,p.y+r+10);}
         else if(contrast==='dark'){ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillText(p.name,p.x,p.y+r+10);}
         else{ctx.fillStyle='rgba(255,255,255,0.9)';ctx.fillText(p.name,p.x,p.y+r+10);}
+      }
+      // Selection ring
+      if(isGhost&&st.selectedGhostId===p.id){
+        ctx.beginPath();ctx.arc(p.x,p.y,r+5,0,Math.PI*2);
+        ctx.strokeStyle='rgba(255,255,255,0.85)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+      } else if(!isGhost&&st.selectedPlayerId===p.id){
+        ctx.beginPath();ctx.arc(p.x,p.y,r+5,0,Math.PI*2);
+        ctx.strokeStyle='rgba(255,255,255,0.85)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
       }
       ctx.restore();
     }
@@ -600,9 +611,11 @@ function TacticsBoard(){
         }
         ctx.setLineDash([4,4]);ctx.strokeStyle='#AAAAAA';ctx.lineWidth=1.5;
         ctx.beginPath();ctx.arc(bx,by,br2,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+        // Selection ring for ghost ball
+        if(sel){ctx.beginPath();ctx.arc(bx,by,br2+5,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.85)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);}
       }else{
         ctx.beginPath();ctx.arc(bx,by,br2,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
-        ctx.strokeStyle=sel?C.blue:'#333';ctx.lineWidth=sel?2:1.2;ctx.stroke();
+        ctx.strokeStyle='#333';ctx.lineWidth=1.2;ctx.stroke();
         ctx.beginPath();
         for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2,px=bx+Math.cos(a)*(br2*0.38),py=by+Math.sin(a)*(br2*0.38);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
         ctx.closePath();ctx.fillStyle='#1a1a1a';ctx.fill();
@@ -615,7 +628,7 @@ function TacticsBoard(){
           const a2=a+Math.PI*2/10,mx=bx+Math.cos(a2)*(br2*0.75),my=by+Math.sin(a2)*(br2*0.75);
           ctx.beginPath();ctx.moveTo(ix,iy);ctx.lineTo(mx,my);ctx.stroke();
         }
-        if(sel){ctx.globalAlpha=1;ctx.beginPath();ctx.arc(bx,by,br2+5,0,Math.PI*2);ctx.strokeStyle='rgba(37,99,235,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);}
+        if(sel){ctx.beginPath();ctx.arc(bx,by,br2+5,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.85)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);}
       }
       if(score){
         const spikes=8,gap=2,spikeLen=br2*0.55;
@@ -775,6 +788,51 @@ function TacticsBoard(){
     ctx.restore();
   }
 
+  // ─── DRAW: MOMENT STRIP ──────────────────────────────────────────────────
+  function drawMoment(ctx,moment){
+    if(!moment)return;
+    const fields=['what','event','at','when','who'];
+    const hasHeading=moment.heading&&moment.heading.trim();
+    const supportFields=fields.filter(function(f){return moment[f]&&moment[f].trim();});
+    if(!hasHeading&&supportFields.length===0)return;
+    const padX=16,padY=8,lineH=16,headingFs=13,bodyFs=11;
+    const maxW=W-padX*2;
+    ctx.save();
+    // Measure total height needed
+    ctx.font='bold '+headingFs+'px sans-serif';
+    const headingLines=hasHeading?wrapText(ctx,moment.heading,maxW):[];
+    ctx.font=bodyFs+'px sans-serif';
+    var bodyLineCount=0;
+    supportFields.forEach(function(f){
+      bodyLineCount+=wrapText(ctx,moment[f].trim(),maxW).length;
+    });
+    const totalLines=headingLines.length+bodyLineCount;
+    const stripH=padY*2+headingLines.length*lineH+(bodyLineCount>0?(headingLines.length>0?4:0)+bodyLineCount*lineH:0);
+    const stripY=H-stripH-4;
+    // Background
+    ctx.fillStyle='rgba(10,10,10,0.72)';
+    ctx.fillRect(0,stripY,W,stripH+4);
+    var y=stripY+padY+headingFs;
+    // Heading
+    if(headingLines.length>0){
+      ctx.font='bold '+headingFs+'px sans-serif';
+      ctx.fillStyle='rgba(255,255,255,0.97)';
+      ctx.textAlign='left';ctx.textBaseline='alphabetic';
+      headingLines.forEach(function(line){ctx.fillText(line,padX,y);y+=lineH;});
+      if(bodyLineCount>0)y+=4;
+    }
+    // Supporting fields
+    if(bodyLineCount>0){
+      ctx.font=bodyFs+'px sans-serif';
+      ctx.fillStyle='rgba(255,255,255,0.75)';
+      supportFields.forEach(function(f){
+        var lines=wrapText(ctx,moment[f].trim(),maxW);
+        lines.forEach(function(line){ctx.fillText(line,padX,y);y+=lineH;});
+      });
+    }
+    ctx.restore();
+  }
+
   function drawScreenOverlays(ctx,scale,ox,oy){
     // Zoom badge
     if(scale>1){
@@ -872,6 +930,7 @@ function TacticsBoard(){
       ctx.setLineDash([]);ctx.restore();
     });
     drawLegends(ctx,st,cA,cB,ph,phaseColor);
+    drawMoment(ctx,st.moment);
     ctx.setTransform(1,0,0,1,0,0);
     drawScreenOverlays(ctx,scale,ox,oy);
   }
@@ -962,7 +1021,7 @@ function TacticsBoard(){
           const key=JSON.stringify(item);
           const exists=ms.some(function(m){return JSON.stringify(m)===key;});
           st.multiSelection=exists?ms.filter(function(m){return JSON.stringify(m)!==key;}):[...ms,item];
-          st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedSymbolIdx=null;
+          st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedSymbolIdx=null;st.selectedPlayerId=null;
           redraw();
         };
         const shSym=hitSymbol(pos);if(shSym>=0){toggleItem({type:'symbol',idx:shSym});return;}
@@ -975,7 +1034,7 @@ function TacticsBoard(){
       st.multiSelection=[];
       const symIdx=hitSymbol(pos);
       if(symIdx>=0&&st.mode==='move'){
-        st.selectedSymbolIdx=symIdx;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;
+        st.selectedSymbolIdx=symIdx;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;st.selectedPlayerId=null;
         drag.current={active:true,type:'symbol',symbolIdx:symIdx};redraw();return;
       }
       const handle=hitArrowHandle(pos);
@@ -992,22 +1051,22 @@ function TacticsBoard(){
       if(slH){const b=getLegendBox('stepLegend');drag.current={active:true,type:'stepLegendResize',handle:slH,downPos:{...pos},origBox:{...b},origLeg:{x:st.stepLegend.x,y:st.stepLegend.y,w:b.w,h:b.h}};draw();return;}
       if(hitStepLegend(pos)){drag.current={active:true,type:'stepLegend',dOff:{x:pos.x-st.stepLegend.x,y:pos.y-st.stepLegend.y}};draw();return;}
       const pm=hitPhaseMarker(pos);
-      if(pm){st.selectedPhaseMarker=pm;drag.current={active:true,type:'phaseMarker',phaseIdx:pm.phaseIdx,markerIdx:pm.markerIdx};st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedSymbolIdx=null;st.selectedGhostId=null;redraw();return;}
+      if(pm){st.selectedPhaseMarker=pm;drag.current={active:true,type:'phaseMarker',phaseIdx:pm.phaseIdx,markerIdx:pm.markerIdx};st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedSymbolIdx=null;st.selectedGhostId=null;st.selectedPlayerId=null;redraw();return;}
       const si=hitSymbol(pos);
-      if(si>=0){st.selectedSymbolIdx=si;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;drag.current={active:true,type:'symbol',symbolIdx:si};redraw();return;}
+      if(si>=0){st.selectedSymbolIdx=si;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;st.selectedPlayerId=null;drag.current={active:true,type:'symbol',symbolIdx:si};redraw();return;}
       const ghost=hitGhost(pos);
-      if(ghost){drag.current={active:true,type:'ghost',ghostId:ghost.id};st.selectedGhostId=ghost.id;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedSymbolIdx=null;redraw();return;}
+      if(ghost){drag.current={active:true,type:'ghost',ghostId:ghost.id};st.selectedGhostId=ghost.id;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedSymbolIdx=null;st.selectedPlayerId=null;redraw();return;}
       const bi=hitBall(pos);
-      if(bi>=0){drag.current={active:true,type:'ball',ballIdx:bi};st.selectedBallIdx=bi;st.selectedArrowIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;redraw();return;}
+      if(bi>=0){drag.current={active:true,type:'ball',ballIdx:bi};st.selectedBallIdx=bi;st.selectedArrowIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;st.selectedPlayerId=null;redraw();return;}
       const player=hitPlayer(pos);
-      if(player){drag.current={active:true,type:'player',playerId:player.id};st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;draw();return;}
+      if(player){drag.current={active:true,type:'player',playerId:player.id};st.selectedPlayerId=player.id;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;redraw();return;}
       const ai=hitArrow(pos);
       if(ai>=0){
-        st.selectedArrowIdx=ai;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;
+        st.selectedArrowIdx=ai;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;st.selectedPlayerId=null;
         drag.current={active:true,type:'arrowBody',arrowIdx:ai,origPath:JSON.parse(JSON.stringify(st.arrows[ai].path)),origCp:st.arrows[ai].cp?{...st.arrows[ai].cp}:null,downPos:{...pos}};
         redraw();return;
       }
-      st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedSymbolIdx=null;redraw();
+      st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedSymbolIdx=null;st.selectedPlayerId=null;redraw();
     }
 
     if(st.mode==='arrow'){
@@ -1158,7 +1217,7 @@ function TacticsBoard(){
     S.current.mode=m;S.current.cropSelected=false;
     ar.current={drawing:false,aStart:null,cPath:[],cpCtrl:null,cpPhase:0,startAnchor:null};
     S.current.selectedArrowIdx=null;S.current.selectedBallIdx=null;S.current.selectedPhaseMarker=null;
-    S.current.selectedSymbolIdx=null;S.current.selectedGhostId=null;
+    S.current.selectedSymbolIdx=null;S.current.selectedGhostId=null;S.current.selectedPlayerId=null;
     if(m!=='crop')cropDrag.current={active:false,start:null,current:null,constrained:null};
     redraw();
   }
@@ -1181,6 +1240,7 @@ function TacticsBoard(){
     if(st.selectedPhaseMarker)items.push({type:'marker',phaseIdx:st.selectedPhaseMarker.phaseIdx,markerIdx:st.selectedPhaseMarker.markerIdx});
     if(st.selectedSymbolIdx!==null)items.push({type:'symbol',idx:st.selectedSymbolIdx});
     if(st.selectedGhostId)items.push({type:'ghost',ghostId:st.selectedGhostId});
+    if(st.selectedPlayerId)items.push({type:'player',playerId:st.selectedPlayerId});
     return items;
   }
 
@@ -1231,7 +1291,7 @@ function TacticsBoard(){
       if(item.type==='allBalls')st.balls=st.balls.filter(bl=>!bl.ghost); // keep first ball
     });
     // Clear selection
-    st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedSymbolIdx=null;st.selectedGhostId=null;
+    st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedSymbolIdx=null;st.selectedGhostId=null;st.selectedPlayerId=null;
     st.multiSelection=[];
     // Handle reset
     items.forEach(item=>{
@@ -1296,7 +1356,7 @@ function TacticsBoard(){
       arrowColor:'#F5F5F5',arrowStyle:'solid',arrowShape:'straight',arrowHeadSize:'m',
       view:'full',pR:14,markerSize:'m',ballSize:'m',activePh:0,labelContrast:'outline',
       symbols:[],symbolColor:'#F5F5F5',symbolSize:'m',symbolType:'goal',
-      selectedArrowIdx:null,selectedBallIdx:null,selectedPhaseMarker:null,selectedSymbolIdx:null,selectedGhostId:null,showGrid:false,showGrid:false,
+      selectedArrowIdx:null,selectedBallIdx:null,selectedPhaseMarker:null,selectedSymbolIdx:null,selectedGhostId:null,selectedPlayerId:null,showGrid:false,showGrid:false,showNames:true,pitchMode:'normal',
       multiSelection:[],
       mode:'move',cropRegion:null,cropSelected:false,exportFormat:'a4',exportOrientation:'landscape',
       moment:{heading:'',what:'',event:'',at:'',when:'',who:''},
@@ -1324,6 +1384,8 @@ function TacticsBoard(){
       symbols:JSON.parse(JSON.stringify(st.symbols||[])),symbolColor:st.symbolColor||'#F5F5F5',symbolSize:st.symbolSize||'m',symbolType:st.symbolType||'goal',
       cropRegion:st.cropRegion,cropSelected:false,exportFormat:st.exportFormat,exportOrientation:st.exportOrientation,
       moment:st.moment||{heading:'',what:'',event:'',at:'',when:'',who:''},
+      showNames:st.showNames!==undefined?st.showNames:true,
+      pitchMode:st.pitchMode||'normal',
     };
   }
   function applyBoardState(data){
@@ -1331,7 +1393,7 @@ function TacticsBoard(){
       'edgeColorA','edgeColorB','teamNameA','teamNameB','arrowColor','arrowHeadSize',
       'arrowShape','arrowStyle','view','pR','markerSize','ballSize','labelContrast','activePh',
       'legend','stepLegend','cropRegion','cropSelected','exportFormat','exportOrientation','moment',
-      'symbols','symbolColor','symbolSize','symbolType'];
+      'symbols','symbolColor','symbolSize','symbolType','showNames','pitchMode'];
     fields.forEach(function(f){if(data[f]!==undefined)S.current[f]=data[f];});
     S.current.selectedArrowIdx=null;S.current.selectedBallIdx=null;S.current.selectedPhaseMarker=null;S.current.selectedSymbolIdx=null;S.current.mode='move';
   }
@@ -1734,14 +1796,24 @@ This analysis will be used to place objects on a tactics board.`;
 
   // ─── LEGACY JSON EXPORT/IMPORT (kept for file-based sharing) ─────────────
   function exportBoard(){
+    const d=new Date();
+    const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     const blob=new Blob([JSON.stringify(boardState(),null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);const a=document.createElement('a');
-    a.href=url;a.download='tactics-board.json';a.click();URL.revokeObjectURL(url);
+    a.href=url;a.download='nn-board-'+ds+'.json';a.click();URL.revokeObjectURL(url);
   }
   function importBoard(e){
     const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
-    reader.onload=ev=>{try{applyBoardState(JSON.parse(ev.target.result));redraw();}catch{alert('Could not read board file.');}};
+    reader.onload=function(ev){
+      try{
+        const data=JSON.parse(ev.target.result);
+        const required=['players','arrows','phases','balls'];
+        const missing=required.filter(function(f){return data[f]===undefined;});
+        if(missing.length){alert('Invalid board file — missing fields: '+missing.join(', ')+'.');e.target.value='';return;}
+        applyBoardState(data);redraw();
+      }catch(err){alert('Could not read board file — invalid JSON.');}
+    };
     reader.readAsText(file);e.target.value='';
   }
 

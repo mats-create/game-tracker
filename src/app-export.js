@@ -3,12 +3,17 @@
 
 // ─── SHARED SVG HELPERS (used by both colour + embroidery export) ─────────
 
-  function pitchSVGLines(ink){
+  function pitchSVGLines(ink,pitchMode){
+    pitchMode=pitchMode||'normal';
     const L=ink?'#1a1a2e':'rgba(255,255,255,0.88)';
     const pad=20,bxW=120,bxH=160,bxY=(H-bxH)/2,smH=80,smY=(H-smH)/2,gH=50,gY=(H-gH)/2;
     const out=[];
     for(let i=0;i<8;i++){
-      const fill=ink?(i%2===0?'rgba(0,80,0,0.07)':'rgba(0,60,0,0.05)'):(i%2===0?'#3a7d44':'#2f6b38');
+      var fill;
+      if(ink){fill=i%2===0?'rgba(0,80,0,0.07)':'rgba(0,60,0,0.05)';}
+      else if(pitchMode==='aida'){fill=i%2===0?'#F5EFE0':'#EDE5CE';}
+      else if(pitchMode==='gray'){fill=i%2===0?'#555555':'#444444';}
+      else{fill=i%2===0?'#3a7d44':'#2f6b38';}
       out.push(`<rect x="${i*W/8}" y="0" width="${W/8}" height="${H}" fill="${fill}"/>`);
     }
     const sw=ink?'1.5':'1.5';
@@ -302,11 +307,9 @@
     var svgLines=[];
     svgLines.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+bw+'" height="'+bh+'" viewBox="'+bx+' '+by+' '+bw+' '+bh+'">');
     svgLines.push('<rect x="'+bx+'" y="'+by+'" width="'+bw+'" height="'+bh+'" fill="#ffffff"/>');
-    pitchSVGLines(false).forEach(function(l){
+    pitchSVGLines(false,st.pitchMode||'normal').forEach(function(l){
       svgLines.push(
-        l.replace(/fill="#3a7d44"/g,'fill="#e8f0e8"')
-         .replace(/fill="#2f6b38"/g,'fill="#dceadc"')
-         .replace(/stroke="rgba\(255,255,255,0\.88\)"/g,'stroke="#4A6741"')
+        l.replace(/stroke="rgba\(255,255,255,0\.88\)"/g,'stroke="#4A6741"')
          .replace(/stroke="#ffffff"/g,'stroke="#4A6741"')
       );
     });
@@ -606,11 +609,9 @@
     svgLines.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+svgPitchW+'" height="'+svgPitchH+'" viewBox="'+b.x+' '+b.y+' '+svgPitchW+' '+svgPitchH+'">');
     svgLines.push('<rect x="'+b.x+'" y="'+b.y+'" width="'+svgPitchW+'" height="'+svgPitchH+'" fill="#ffffff"/>');
     // Faint pitch stripes + Pitch Green (#4A6741) pitch lines
-    pitchSVGLines(false).forEach(function(l){
+    pitchSVGLines(false,st.pitchMode||'normal').forEach(function(l){
       svgLines.push(
-        l.replace(/fill="#3a7d44"/g,'fill="#e8f0e8"')
-         .replace(/fill="#2f6b38"/g,'fill="#dceadc"')
-         .replace(/stroke="rgba\(255,255,255,0\.88\)"/g,'stroke="#4A6741"')
+        l.replace(/stroke="rgba\(255,255,255,0\.88\)"/g,'stroke="#4A6741"')
          .replace(/stroke="#ffffff"/g,'stroke="#4A6741"')
       );
     });
@@ -732,7 +733,7 @@
       out.push(`<defs><clipPath id="pc"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/></clipPath></defs>`);
       out.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="#fff"/>`);
       out.push(`<g clip-path="url(#pc)">`);
-      pitchSVGLines(false).forEach(l=>out.push('  '+l));
+      pitchSVGLines(false,st.pitchMode||'normal').forEach(l=>out.push('  '+l));
       arrowSVGLines(arr,hs,emb).forEach(l=>out.push('  '+l));
       symbolSVGLines(st.symbols).forEach(l=>out.push('  '+l));
       markerSVGLines(ph,phaseColor,st.markerSize,r).forEach(l=>out.push('  '+l));
@@ -763,7 +764,7 @@
     out2.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h+28}" fill="#ffffff"/>`);
     out2.push(`<g clip-path="url(#pce)">`);
     out2.push(`<g inkscape:label="Pitch" inkscape:groupmode="layer" id="layer-pitch">`);
-    pitchSVGLines(false).forEach(function(l){out2.push('  '+l.replace(/fill="#3a7d44"/g,'fill="#e8f0e8"').replace(/fill="#2f6b38"/g,'fill="#dceadc"'));});
+    pitchSVGLines(false,st.pitchMode||'normal').forEach(function(l){out2.push('  '+l);});
     out2.push(`</g>`);
     out2.push(`<g inkscape:label="Arrows" inkscape:groupmode="layer" id="layer-arrows">`);
     arrowSVGLines(arr,hs,false).forEach(l=>out2.push('  '+l));

@@ -1,5 +1,5 @@
 // app-utils.js -- pure utility functions and constants
-// Nutmeg&Needle Game Tracker -- edit this file, not index.html
+// Nutmeg&Needle Game Tracker by MPH -- edit this file, not index.html
 // These have no React dependency and are used by app-core.js, app-export.js, and app-ui.js.
 
 // app-core.js — constants, canvas draw functions, TacticsBoard component body

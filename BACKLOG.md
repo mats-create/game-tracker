@@ -531,6 +531,156 @@ A pure function `estimateThreadLengths(st)` returning `{ hex: cm }` map belongs 
 
 ---
 
+---
+
+### GT-061 · Consistent dashed selection ring for Player, Ghost player, and Ball
+
+**Priority:** P2  
+**Confidence:** HIGH -- current state fully mapped, approach clear  
+**Status:** [ ]
+
+**Background:**  
+Selection is indicated inconsistently across object types:
+- Symbols: dashed rounded-rect ring ✓
+- Move markers: dashed square ring ✓
+- Real ball: blue solid stroke change + faint blue dashed arc -- inconsistent
+- Ghost ball: no selection indicator at all
+- Real player: no selection indicator
+- Ghost player: no selection indicator (selectedGhostId tracked but never drawn)
+
+**User story:**  
+As a user, I want selected objects to show the same dashed ring so that I always know what is selected regardless of object type.
+
+**What to build:**  
+Add a dashed circle ring after drawing each player/ball when selected, matching the style used for symbols and markers. For players, `drawPlayers` already receives `st` so `st.selectedGhostId` is available. For balls, `selB===bi` is already passed. Remove the current inconsistent blue stroke/arc on selected real ball and replace with the dashed ring.
+
+**Acceptance criteria:**
+- [ ] Selected real player shows dashed ring
+- [ ] Selected ghost player shows dashed ring
+- [ ] Selected real ball shows dashed ring (replaces current blue stroke)
+- [ ] Selected ghost ball shows dashed ring
+- [ ] Ring style is visually consistent with symbol and move marker selection
+
+**Files needed:** `app-core.js`
+
+---
+
+### GT-062 · Show Memorable moment text on pitch canvas
+
+**Priority:** P3  
+**Confidence:** HIGH -- moment object structure known, no canvas rendering currently exists  
+**Status:** [ ]
+
+**Background:**  
+The `moment` object (`heading`, `what`, `event`, `at`, `when`, `who`) is filled in via the Memorable moment panel and used in PDF/SVG export, but never rendered on the canvas. The pitch preview gives no indication of what moment has been captured.
+
+**User story:**  
+As a user, I want to see the memorable moment text on the pitch canvas so that the canvas view is a faithful preview of the exported output.
+
+**What to build:**  
+Add a `drawMoment(ctx, moment)` function that renders moment text as a small overlay on the pitch (e.g. bottom strip). Only shown when at least one field is filled. Positioned to avoid obscuring the playing area. Style should match the export rendering.
+
+**Acceptance criteria:**
+- [ ] Moment text appears on canvas when at least one moment field is filled
+- [ ] Canvas rendering matches or closely approximates the export output
+- [ ] Empty moment object produces no canvas overlay
+- [ ] Text is legible at normal zoom level
+
+**Files needed:** `app-core.js`
+
+---
+
+### GT-063 · Player name label toggle (show/hide below marker)
+
+**Priority:** P2  
+**Confidence:** HIGH -- single guard needed, location confirmed  
+**Status:** [ ]
+
+**Background:**  
+Player names render unconditionally at `drawPlayers` line 570--574 when `!isGhost && p.name && r>=14`. There is no way to hide them without removing the names entirely. For tactical diagrams focused on positions rather than individuals, hiding names gives a cleaner view.
+
+**User story:**  
+As a user, I want to toggle player name labels on and off so that I can switch between a named view (for communication) and a clean positional view (for tactics).
+
+**What to build:**  
+- Add `showNames` boolean to board default state (default `true`)
+- Add `if(st.showNames)` guard around the name rendering in `drawPlayers`
+- Add a toggle button in the Players panel or Pitch settings in `app-ui.js`
+- Include `showNames` in `boardState()` serialisation and `applyBoardState()`
+
+**Acceptance criteria:**
+- [ ] Names visible by default
+- [ ] Toggle button hides/shows all player name labels
+- [ ] Setting persists when board is saved and reloaded
+- [ ] Ghost players unaffected (they never show names)
+
+**Files needed:** `app-core.js`, `app-ui.js`
+
+---
+
+### GT-064 · Pitch colour modes: Normal / Embroidery / Grayscale
+
+**Priority:** P2  
+**Confidence:** HIGH -- drawPitch location confirmed, colour values known  
+**Status:** [ ]
+
+**Background:**  
+`drawPitch` hardcodes two greens (`#3a7d44`, `#2f6b38`) for the alternating pitch stripes. There is no way to preview how the board will look in embroidery (Aida) or grayscale contexts without exporting. A grayscale mode is new and not currently available anywhere.
+
+**User story:**  
+As a user, I want to switch the pitch colour between Normal (moss green), Embroidery (Aida cream/off-white), and Grayscale so that I can see an accurate preview of each output format while working.
+
+**What to build:**  
+- Add `pitchMode` to board state: `'normal'` (default) / `'aida'` / `'gray'`
+- `drawPitch` reads `pitchMode` and switches stripe colours:
+  - Normal: `#3a7d44` / `#2f6b38` (current)
+  - Aida: `#F5EFE0` / `#EDE5CE` (off-white/cream)
+  - Grayscale: `#555555` / `#444444`
+- Toggle buttons (Normal / Aida / Gray) in Pitch settings in `app-ui.js`
+- Pass `pitchMode` through to `app-export.js` SVG pitch rendering
+- Include `pitchMode` in `boardState()` serialisation
+
+**Acceptance criteria:**
+- [ ] Three mode buttons visible in Pitch settings
+- [ ] Canvas pitch updates immediately on mode change
+- [ ] SVG and PDF exports use the correct pitch colours for the selected mode
+- [ ] Setting persists when board is saved and reloaded
+
+**Files needed:** `app-core.js`, `app-ui.js`, `app-export.js`
+
+---
+
+### GT-065 · Re-introduce JSON export/import as backup with validation
+
+**Priority:** P2  
+**Confidence:** HIGH -- functions exist, UI wiring and cleanup needed  
+**Status:** [ ]
+
+**Background:**  
+`exportBoard()` and `importBoard()` already exist in `app-core.js` (lines 1741--1751) but are not wired up in the UI. There is also a duplicate `importBoard` definition in `app-core.js`. Export uses the generic filename `tactics-board.json`. Import has no validation -- it applies whatever JSON is provided without checking required fields, which can corrupt board state silently.
+
+**User story:**  
+As a user, I want to export the full board state as a JSON file and import it back so that I have a reliable backup and restore option independent of Firestore.
+
+**What to build:**  
+- Add Export JSON and Import JSON buttons to the Export panel in `app-ui.js`
+- Remove the duplicate `importBoard` definition from `app-core.js`
+- Update export filename to include date (e.g. `nn-board-2026-05-18.json`)
+- Add validation to `importBoard`: check for required fields (`players`, `arrows`, `phases`, `balls`) before calling `applyBoardState`; show an error message if validation fails
+- Export must use the full `boardState()` output so import restores 100% of state
+
+**Acceptance criteria:**
+- [ ] Export JSON button visible in Export panel
+- [ ] Import JSON button visible in Export panel
+- [ ] Exported file includes all board state fields
+- [ ] Importing a valid file restores board state completely
+- [ ] Importing an invalid or unrecognised file shows a clear error message and does not corrupt state
+- [ ] Duplicate `importBoard` definition removed from app-core.js
+- [ ] Export filename includes date
+
+**Files needed:** `app-core.js`, `app-ui.js`
+
+
 ## Investigation queue
 
 Stories that cannot be planned or sized until files are uploaded and read.
@@ -581,3 +731,4 @@ Stories that cannot be planned or sized until files are uploaded and read.
 | 2026-05-17 | Epic 4 added -- Print Instructions PDF (GT-040 through GT-043), all completed |
 | 2026-05-17 | Epic 5 added -- Embroidery how-to guide (GT-050 scaffold done, GT-051/052 queued) |
 | 2026-05-17 | Epic 6 added -- Thread length estimation (GT-060 investigation queued) |
+| 2026-05-18 | GT-061 through GT-065 added -- selection rings, moment on pitch, name toggle, pitch colour modes, JSON export/import |

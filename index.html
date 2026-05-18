@@ -451,12 +451,12 @@ function PlayerPanel({S,activeTeam,setActiveTeam,expandedId,toggleExpanded,addGh
       <div style={{display:'flex',gap:16,alignItems:'center',paddingLeft:32}}>
         <div style={{display:'flex',alignItems:'center',gap:5}}>
           <span style={{fontSize:10,color:C.textMuted}}>Jersey</span>
-          <input type="color" defaultValue={teamColor} onChange={e=>{S.current[team==='A'?'colorA':'colorB']=e.target.value;redraw();}}
+          <input type="color" value={teamColor} onChange={e=>{S.current[team==='A'?'colorA':'colorB']=e.target.value;redraw();}}
             style={{width:32,height:24,padding:1,border:`0.5px solid ${C.inputBorder}`,borderRadius:4,cursor:'pointer'}} title="Jersey colour"/>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:5}}>
           <span style={{fontSize:10,color:C.textMuted}}>Ring</span>
-          <input type="color" defaultValue={edgeColor} onChange={e=>{S.current[edgeColorKey]=e.target.value;redraw();}}
+          <input type="color" value={edgeColor} onChange={e=>{S.current[edgeColorKey]=e.target.value;redraw();}}
             style={{width:32,height:24,padding:1,border:`0.5px solid ${C.inputBorder}`,borderRadius:4,cursor:'pointer'}} title="Ring/trim colour"/>
         </div>
       </div>
@@ -661,6 +661,7 @@ function TacticsBoard(){
   function hitGhost(pos){const r=S.current.pR;return S.current.players.find(p=>p.ghost&&Math.hypot(p.x-pos.x,p.y-pos.y)<r+6);}
   function hitBall(pos){return S.current.balls.findIndex(bl=>Math.hypot(bl.x-pos.x,bl.y-pos.y)<14);}
   function hitArrow(pos){const arr=S.current.arrows;for(let i=arr.length-1;i>=0;i--)if(distToArrow(pos,arr[i])<10)return i;return -1;}
+  function symbolHitR(size){return(SSIZES[size]||SSIZES.m)+4;}
   function hitSymbol(pos){const syms=S.current.symbols||[];for(let i=syms.length-1;i>=0;i--){const s=syms[i];if(Math.hypot(s.x-pos.x,s.y-pos.y)<symbolHitR(s.size))return i;}return -1;}
 
   function hitArrowHandle(pos){
@@ -1487,7 +1488,7 @@ function TacticsBoard(){
       st.multiSelection=[];
       const symIdx=hitSymbol(pos);
       if(symIdx>=0&&st.mode==='move'){
-        st.selectedSymbolIdx=symIdx;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;
+        st.selectedSymbolIdx=symIdx;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;
         drag.current={active:true,type:'symbol',symbolIdx:symIdx};redraw();return;
       }
       const handle=hitArrowHandle(pos);
@@ -1504,18 +1505,18 @@ function TacticsBoard(){
       if(slH){const b=getLegendBox('stepLegend');drag.current={active:true,type:'stepLegendResize',handle:slH,downPos:{...pos},origBox:{...b},origLeg:{x:st.stepLegend.x,y:st.stepLegend.y,w:b.w,h:b.h}};draw();return;}
       if(hitStepLegend(pos)){drag.current={active:true,type:'stepLegend',dOff:{x:pos.x-st.stepLegend.x,y:pos.y-st.stepLegend.y}};draw();return;}
       const pm=hitPhaseMarker(pos);
-      if(pm){st.selectedPhaseMarker=pm;drag.current={active:true,type:'phaseMarker',phaseIdx:pm.phaseIdx,markerIdx:pm.markerIdx};st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedSymbolIdx=null;redraw();return;}
+      if(pm){st.selectedPhaseMarker=pm;drag.current={active:true,type:'phaseMarker',phaseIdx:pm.phaseIdx,markerIdx:pm.markerIdx};st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedSymbolIdx=null;st.selectedGhostId=null;redraw();return;}
       const si=hitSymbol(pos);
-      if(si>=0){st.selectedSymbolIdx=si;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;drag.current={active:true,type:'symbol',symbolIdx:si};redraw();return;}
+      if(si>=0){st.selectedSymbolIdx=si;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;drag.current={active:true,type:'symbol',symbolIdx:si};redraw();return;}
       const ghost=hitGhost(pos);
       if(ghost){drag.current={active:true,type:'ghost',ghostId:ghost.id};st.selectedGhostId=ghost.id;st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedSymbolIdx=null;redraw();return;}
       const bi=hitBall(pos);
-      if(bi>=0){drag.current={active:true,type:'ball',ballIdx:bi};st.selectedBallIdx=bi;st.selectedArrowIdx=null;st.selectedPhaseMarker=null;redraw();return;}
+      if(bi>=0){drag.current={active:true,type:'ball',ballIdx:bi};st.selectedBallIdx=bi;st.selectedArrowIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;redraw();return;}
       const player=hitPlayer(pos);
       if(player){drag.current={active:true,type:'player',playerId:player.id};st.selectedArrowIdx=null;st.selectedBallIdx=null;st.selectedPhaseMarker=null;draw();return;}
       const ai=hitArrow(pos);
       if(ai>=0){
-        st.selectedArrowIdx=ai;st.selectedBallIdx=null;st.selectedPhaseMarker=null;
+        st.selectedArrowIdx=ai;st.selectedBallIdx=null;st.selectedPhaseMarker=null;st.selectedGhostId=null;
         drag.current={active:true,type:'arrowBody',arrowIdx:ai,origPath:JSON.parse(JSON.stringify(st.arrows[ai].path)),origCp:st.arrows[ai].cp?{...st.arrows[ai].cp}:null,downPos:{...pos}};
         redraw();return;
       }
@@ -1547,12 +1548,6 @@ function TacticsBoard(){
       redraw();return;
     }
 
-    if(st.mode==='symbol'){
-      const sym={x:pos.x,y:pos.y,type:st.symbolType||'goal',size:st.symbolSize||'m',color:st.symbolColor||'#F5F5F5'};
-      st.symbols=[...(st.symbols||[]),sym];
-      st.selectedSymbolIdx=(st.symbols.length-1);
-      redraw();return;
-    }
     if(st.mode==='phase'){
       const ph2=st.phases[st.activePh];if(!ph2)return;
       ph2.markers=[...(ph2.markers||[]),{x:pos.x,y:pos.y}];
@@ -1629,7 +1624,6 @@ function TacticsBoard(){
       else if(d.type==='ghost'){const p=st.players.find(p=>p.id===d.ghostId);if(p){p.x=pos.x;p.y=pos.y;}}
       else if(d.type==='ball'){const bl=st.balls[d.ballIdx];if(bl){bl.x=pos.x;bl.y=pos.y;}}
       else if(d.type==='symbol'){const sym=(st.symbols||[])[d.symbolIdx];if(sym){sym.x=pos.x;sym.y=pos.y;}}
-      else if(d.type==='symbol'){const sym=(st.symbols||[])[d.symbolIdx];if(sym){sym.x=pos.x;sym.y=pos.y;}}
       else if(d.type==='phaseMarker'){
         const markers=st.phases[d.phaseIdx].markers;
         if(markers&&markers[d.markerIdx]){markers[d.markerIdx].x=pos.x;markers[d.markerIdx].y=pos.y;}
@@ -1677,6 +1671,7 @@ function TacticsBoard(){
     S.current.mode=m;S.current.cropSelected=false;
     ar.current={drawing:false,aStart:null,cPath:[],cpCtrl:null,cpPhase:0,startAnchor:null};
     S.current.selectedArrowIdx=null;S.current.selectedBallIdx=null;S.current.selectedPhaseMarker=null;
+    S.current.selectedSymbolIdx=null;S.current.selectedGhostId=null;
     if(m!=='crop')cropDrag.current={active:false,start:null,current:null,constrained:null};
     redraw();
   }

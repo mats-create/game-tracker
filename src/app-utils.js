@@ -304,6 +304,15 @@ function svgWrap(text,maxChars){
 function markerHalf(st,extra){
   return(MSIZES[st.markerSize||'m']||Math.round(st.pR*1.4))+(extra||0);
 }
+// ─── RENDERING SIZE HELPERS ───────────────────────────────────────────────────
+// Single source of truth for all shared sizing formulas.
+// Used by both canvas draw code (app-core.js) and SVG/PDF export (app-export.js).
+// Change a formula here and it applies consistently to canvas + SVG + PDF.
+function ballRadius(r)       { return Math.max(6,Math.round(r*0.65)); }
+function playerNumFS(r)      { return Math.max(9,Math.round(r*1.1)); }
+function markerLabelFS(half) { return Math.max(7,Math.round(half*1.3)); }
+function legendDotNumFS(dr)  { return Math.max(8,Math.round(dr*1.2)); }
+function stepMarkerFS(br)    { return Math.max(5,Math.round(br*0.9)); }
 
 // ─── UI PRIMITIVE COMPONENTS ────────────────────────────────────────────────
 // Defined here (before TacticsBoard opens) so they are at true module scope.

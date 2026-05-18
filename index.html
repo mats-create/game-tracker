@@ -744,13 +744,14 @@ function TacticsBoard(){
 
   // ─── DRAW: PITCH ──────────────────────────────────────────────────────────
   function drawPitch(ctx,v){
-    const CCR=52,pad=20,L='rgba(255,255,255,0.88)';
+    const CCR=52,pad=20;
     const b=v==='left'?{x:0,w:W/2+CCR}:v==='right'?{x:W/2-CCR,w:W/2+CCR}:{x:0,w:W};
     ctx.save();
     if(v!=='full'){ctx.beginPath();ctx.rect(b.x,0,b.w,H);ctx.clip();}
     const pm=S.current.pitchMode||'normal';
-    const pc1=pm==='aida'?'#F5EFE0':pm==='gray'?'#555555':'#3a7d44';
-    const pc2=pm==='aida'?'#EDE5CE':pm==='gray'?'#444444':'#2f6b38';
+    const pc1=pm==='aida'?'#e8f0e8':pm==='gray'?'#555555':'#3a7d44';
+    const pc2=pm==='aida'?'#dceadc':pm==='gray'?'#444444':'#2f6b38';
+    const L=pm==='aida'?'#4A6741':pm==='gray'?'rgba(255,255,255,0.55)':'rgba(255,255,255,0.88)';
     for(let i=0;i<8;i++){ctx.fillStyle=i%2===0?pc1:pc2;ctx.fillRect(i*W/8,0,W/8,H);}
     ctx.strokeStyle=L;ctx.lineWidth=1.5;
     ctx.strokeRect(pad,pad,W-pad*2,H-pad*2);
@@ -1305,44 +1306,60 @@ function TacticsBoard(){
   function drawMoment(ctx,moment){
     if(!moment)return;
     const fields=['what','event','at','when','who'];
+    const fieldLabels={what:'WHAT',event:'EVENT',at:'AT',when:'WHEN',who:'WHO'};
     const hasHeading=moment.heading&&moment.heading.trim();
     const supportFields=fields.filter(function(f){return moment[f]&&moment[f].trim();});
     if(!hasHeading&&supportFields.length===0)return;
-    const padX=16,padY=8,lineH=16,headingFs=13,bodyFs=11;
-    const maxW=W-padX*2;
+    const padX=14,padY=10,headingFs=14,labelFs=8,bodyFs=11,headingLineH=18,bodyLineH=14,labelGap=3,fieldGap=6;
+    const accentW=3;
+    const maxW=W-padX*2-accentW-6;
     ctx.save();
-    // Measure total height needed
-    ctx.font='bold '+headingFs+'px sans-serif';
-    const headingLines=hasHeading?wrapText(ctx,moment.heading,maxW):[];
-    ctx.font=bodyFs+'px sans-serif';
-    var bodyLineCount=0;
+    ctx.font='bold '+headingFs+'px Inter,sans-serif';
+    const headingLines=hasHeading?wrapText(ctx,moment.heading.trim(),maxW):[];
+    ctx.font=bodyFs+'px Inter,sans-serif';
+    // Measure total strip height
+    var contentH=0;
+    if(headingLines.length>0)contentH+=headingLines.length*headingLineH+(supportFields.length>0?8:0);
     supportFields.forEach(function(f){
-      bodyLineCount+=wrapText(ctx,moment[f].trim(),maxW).length;
+      var lines=wrapText(ctx,moment[f].trim(),maxW);
+      contentH+=labelFs+labelGap+lines.length*bodyLineH+fieldGap;
     });
-    const totalLines=headingLines.length+bodyLineCount;
-    const stripH=padY*2+headingLines.length*lineH+(bodyLineCount>0?(headingLines.length>0?4:0)+bodyLineCount*lineH:0);
-    const stripY=H-stripH-4;
-    // Background
-    ctx.fillStyle='rgba(10,10,10,0.72)';
-    ctx.fillRect(0,stripY,W,stripH+4);
-    var y=stripY+padY+headingFs;
+    const stripH=padY*2+14+contentH; // 14 = header bar row height
+    const stripY=H-stripH-2;
+    const tx=padX+accentW+6;
+    // Linen card background
+    ctx.fillStyle='#F0E6D3';
+    ctx.fillRect(0,stripY,W,stripH+2);
+    // Coral left accent bar
+    ctx.fillStyle='#CC3300';
+    ctx.fillRect(0,stripY,accentW,stripH+2);
+    // Header bar row label
+    ctx.font='bold '+labelFs+'px Inter,sans-serif';
+    ctx.fillStyle='#CC3300';
+    ctx.textAlign='left';ctx.textBaseline='alphabetic';
+    ctx.fillText('MEMORABLE MOMENT',tx,stripY+padY+labelFs);
+    // Content below header row
+    var y=stripY+padY+14+padY;
     // Heading
     if(headingLines.length>0){
-      ctx.font='bold '+headingFs+'px sans-serif';
-      ctx.fillStyle='rgba(255,255,255,0.97)';
-      ctx.textAlign='left';ctx.textBaseline='alphabetic';
-      headingLines.forEach(function(line){ctx.fillText(line,padX,y);y+=lineH;});
-      if(bodyLineCount>0)y+=4;
+      ctx.font='bold '+headingFs+'px Inter,sans-serif';
+      ctx.fillStyle='#1A1A1A';
+      headingLines.forEach(function(line){ctx.fillText(line,tx,y);y+=headingLineH;});
+      if(supportFields.length>0)y+=8;
     }
-    // Supporting fields
-    if(bodyLineCount>0){
-      ctx.font=bodyFs+'px sans-serif';
-      ctx.fillStyle='rgba(255,255,255,0.75)';
-      supportFields.forEach(function(f){
-        var lines=wrapText(ctx,moment[f].trim(),maxW);
-        lines.forEach(function(line){ctx.fillText(line,padX,y);y+=lineH;});
-      });
-    }
+    // Field rows: coral caps label then body text
+    ctx.font=bodyFs+'px Inter,sans-serif';
+    supportFields.forEach(function(f){
+      ctx.font='bold '+labelFs+'px Inter,sans-serif';
+      ctx.fillStyle='#CC3300';
+      ctx.fillText(fieldLabels[f],tx,y);
+      y+=labelFs+labelGap;
+      ctx.font=bodyFs+'px Inter,sans-serif';
+      ctx.fillStyle='#323230';
+      var lines=wrapText(ctx,moment[f].trim(),maxW);
+      lines.forEach(function(line){ctx.fillText(line,tx,y);y+=bodyLineH;});
+      y+=fieldGap;
+    });
     ctx.restore();
   }
 
@@ -2357,7 +2374,7 @@ const NN_LOGO_LINEN='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAChQAAAMMCAYAA
     for(let i=0;i<8;i++){
       var fill;
       if(ink){fill=i%2===0?'rgba(0,80,0,0.07)':'rgba(0,60,0,0.05)';}
-      else if(pitchMode==='aida'){fill=i%2===0?'#F5EFE0':'#EDE5CE';}
+      else if(pitchMode==='aida'){fill=i%2===0?'#e8f0e8':'#dceadc';}
       else if(pitchMode==='gray'){fill=i%2===0?'#555555':'#444444';}
       else{fill=i%2===0?'#3a7d44':'#2f6b38';}
       out.push(`<rect x="${i*W/8}" y="0" width="${W/8}" height="${H}" fill="${fill}"/>`);

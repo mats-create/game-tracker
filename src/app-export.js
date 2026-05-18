@@ -11,7 +11,7 @@
     for(let i=0;i<8;i++){
       var fill;
       if(ink){fill=i%2===0?'rgba(0,80,0,0.07)':'rgba(0,60,0,0.05)';}
-      else if(pitchMode==='aida'){fill=i%2===0?'#F5EFE0':'#EDE5CE';}
+      else if(pitchMode==='aida'){fill=i%2===0?'#e8f0e8':'#dceadc';}
       else if(pitchMode==='gray'){fill=i%2===0?'#555555':'#444444';}
       else{fill=i%2===0?'#3a7d44':'#2f6b38';}
       out.push(`<rect x="${i*W/8}" y="0" width="${W/8}" height="${H}" fill="${fill}"/>`);

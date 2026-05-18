@@ -23,6 +23,7 @@ function TacticsBoard(){
     cropRegion:null,cropSelected:false,
     moment:{heading:'',what:'',event:'',at:'',when:'',who:''},
     exportFormat:'a4',exportOrientation:'landscape',
+    legend:{x:40,y:H-160,scale:1,cols:2,w:null,h:null,textColor:'#222'},stepLegend:{x:W-220,y:40,scale:1,w:null,h:null,textColor:'#333'},
   });
 
   // Viewport (pan/zoom) — separate from board state
@@ -1304,6 +1305,7 @@ function TacticsBoard(){
       multiSelection:[],
       mode:'move',cropRegion:null,cropSelected:false,exportFormat:'a4',exportOrientation:'landscape',
       moment:{heading:'',what:'',event:'',at:'',when:'',who:''},
+      legend:{x:40,y:H-160,scale:1,cols:2,w:null,h:null,textColor:'#222'},stepLegend:{x:W-220,y:40,scale:1,w:null,h:null,textColor:'#333'},
     };
     ar.current={drawing:false,aStart:null,cPath:[],cpCtrl:null,cpPhase:0,startAnchor:null};
     drag.current={active:false,type:null};

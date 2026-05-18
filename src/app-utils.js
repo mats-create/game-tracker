@@ -391,12 +391,12 @@ function PlayerPanel({S,activeTeam,setActiveTeam,expandedId,toggleExpanded,addGh
       <div style={{display:'flex',gap:16,alignItems:'center',paddingLeft:32}}>
         <div style={{display:'flex',alignItems:'center',gap:5}}>
           <span style={{fontSize:10,color:C.textMuted}}>Jersey</span>
-          <input type="color" defaultValue={teamColor} onChange={e=>{S.current[team==='A'?'colorA':'colorB']=e.target.value;redraw();}}
+          <input type="color" value={teamColor} onChange={e=>{S.current[team==='A'?'colorA':'colorB']=e.target.value;redraw();}}
             style={{width:32,height:24,padding:1,border:`0.5px solid ${C.inputBorder}`,borderRadius:4,cursor:'pointer'}} title="Jersey colour"/>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:5}}>
           <span style={{fontSize:10,color:C.textMuted}}>Ring</span>
-          <input type="color" defaultValue={edgeColor} onChange={e=>{S.current[edgeColorKey]=e.target.value;redraw();}}
+          <input type="color" value={edgeColor} onChange={e=>{S.current[edgeColorKey]=e.target.value;redraw();}}
             style={{width:32,height:24,padding:1,border:`0.5px solid ${C.inputBorder}`,borderRadius:4,cursor:'pointer'}} title="Ring/trim colour"/>
         </div>
       </div>

@@ -1,5 +1,5 @@
 // app-ui.js — PlayerPanel sub-component, JSX render tree, root.render
-// Nutmeg&Needle Game Tracker — edit this file,  not index.html
+// Nutmeg&Needle Game Tracker by MPH — edit this file,  not index.html
 
 // ─── UI PRIMITIVES (moved from app-core.js) ─────────────────────────────────
 function Card({children,style}){return <div style={{background:C.card,border:`0.5px solid ${C.cardBorder}`,borderRadius:14,padding:'12px 14px',marginBottom:8,...style}}>{children}</div>;}
